@@ -1,0 +1,470 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.sireum.hooks</groupId>
+    <artifactId>virtual-reactor-hooks</artifactId>
+    <version>0.1-SNAPSHOT</version>
+
+    <properties>
+        <java.version>1.8</java.version>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!-- used for enforcing that the debug profile is disabled - overwritten to true by the debug profile  -->
+        <is-debug-profile-active>false</is-debug-profile-active>
+
+        <!-- reactor's bill of materials imports a set of compatible versions for each release, but  -->
+        <!-- these must also be defined explicitly in this pom.xml because the versions are used     -->
+        <!-- for both plugin dependencies and the copying of files containing the version name.      -->
+        <!-- If the version of reactor-core or reactor-test does not correspond to reactor-bom, the  -->
+        <!-- maven-enforcer-plugin will cause the build to fail instead (displaying the mismatch).   -->
+        <reactor-bom.version>Dysprosium-SR7</reactor-bom.version>
+        <reactor-core.version>3.3.5.RELEASE</reactor-core.version>
+        <reactor-test.version>3.3.5.RELEASE</reactor-test.version>
+
+        <aspectj.version>1.9.5</aspectj.version>
+        <kotlin-stdlib.version>1.3.71</kotlin-stdlib.version>
+        <reactive-streams-tck.version>1.0.3</reactive-streams-tck.version>
+        <testng.version>7.1.0</testng.version>
+
+        <enforcer-plugin.version>3.0.0-M3</enforcer-plugin.version>
+        <build-helper-plugin.version>3.1.0</build-helper-plugin.version>
+        <aspectj-plugin.version>1.11</aspectj-plugin.version>
+        <compiler-plugin.version>3.8.1</compiler-plugin.version>
+        <surefire-plugin.version>2.22.2</surefire-plugin.version>
+        <dependency-plugin.version>3.1.2</dependency-plugin.version>
+        <replacer-plugin.version>1.5.3</replacer-plugin.version>
+        <jar-plugin.version>3.2.0</jar-plugin.version>
+        <install-plugin.version>2.5.2</install-plugin.version>
+    </properties>
+
+    <profiles>
+        <profile>
+            <id>debug</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <is-debug-profile-active>true</is-debug-profile-active>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.aspectj</groupId>
+                    <artifactId>aspectjrt</artifactId>
+                    <scope>compile</scope>
+                </dependency>
+<!--                <dependency>-->
+<!--                    <groupId>io.projectreactor</groupId>-->
+<!--                    <artifactId>reactor-test</artifactId>-->
+<!--                    <scope>compile</scope>-->
+<!--                    <exclusions>-->
+<!--                        <exclusion>-->
+<!--                            <groupId>io.projectreactor</groupId>-->
+<!--                            <artifactId>reactor-core</artifactId>-->
+<!--                        </exclusion>-->
+<!--                    </exclusions>-->
+<!--                </dependency>-->
+            </dependencies>
+        </profile>
+    </profiles>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.projectreactor</groupId>
+                <artifactId>reactor-bom</artifactId>
+                <version>${reactor-bom.version}</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>org.aspectj</groupId>
+                <artifactId>aspectjrt</artifactId>
+                <version>${aspectj.version}</version>
+                <scope>runtime</scope>
+            </dependency>
+            <!-- required for aspect weaver to handle kotlin extensions in reactor lib -->
+            <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-stdlib</artifactId>
+                <version>${kotlin-stdlib.version}</version>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>org.testng</groupId>
+                <artifactId>testng</artifactId>
+                <version>${testng.version}</version>
+                <scope>test</scope>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>org.reactivestreams</groupId>
+                <artifactId>reactive-streams-tck</artifactId>
+                <version>${reactive-streams-tck.version}</version>
+                <scope>test</scope>
+                <optional>true</optional>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.reactivestreams</groupId>
+            <artifactId>reactive-streams</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-core</artifactId>
+            <scope>provided</scope> <!-- provided by this project's build jar -->
+        </dependency>
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-test</artifactId>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.projectreactor</groupId>
+                    <artifactId>reactor-core</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.aspectj</groupId>
+            <artifactId>aspectjrt</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-stdlib</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.reactivestreams</groupId>
+            <artifactId>reactive-streams-tck</artifactId>
+        </dependency>
+    </dependencies>
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-enforcer-plugin</artifactId>
+                    <version>${enforcer-plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <id>default-cli</id>
+                            <goals>
+                                <goal>enforce</goal>
+                            </goals>
+                            <phase>validate</phase>
+                            <configuration>
+                                <rules>
+                                    <bannedDependencies>
+                                        <!-- ban all reactor-core and reactor-test.. -->
+                                        <excludes>
+                                            <exclude>io.projectreactor:reactor-core:*:*:*</exclude>
+                                            <exclude>io.projectreactor:reactor-test:*:*:*</exclude>
+                                        </excludes>
+                                        <!-- ..unless they match the property versions -->
+                                        <includes>
+                                            <include>io.projectreactor:reactor-core:[${reactor-core.version}]:jar:provided</include>
+                                            <include>io.projectreactor:reactor-test:[${reactor-test.version}]:jar:runtime</include>
+                                            <include>io.projectreactor:reactor-core:[${reactor-core.version}]:jar:*</include>
+                                            <include>io.projectreactor:reactor-test:[${reactor-test.version}]:jar:*</include>
+                                        </includes>
+                                        <message>ERROR: version properties reactor-core (${reactor-core.version}) and reactor-test (${reactor-test.version}) were not imported by reactor-bom (${reactor-bom.version}).</message>
+                                        <searchTransitive>true</searchTransitive>
+                                    </bannedDependencies>
+                                    <requireProperty>
+                                        <property>is-debug-profile-active</property>
+                                        <regex>^(?!(true)$).*$</regex> <!-- matches anything but "true" (without quotes) -->
+                                        <message>No is-debug-profile-active property found (this should be false by default, true if debug is active)</message>
+                                        <regexMessage>The debug profile must not be activated.</regexMessage>
+                                    </requireProperty>
+                                </rules>
+                                <fail>true</fail>
+                                <ignoreCache>true</ignoreCache>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>build-helper-maven-plugin</artifactId>
+                    <version>${build-helper-plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <id>timestamp-property</id>
+                            <goals>
+                                <goal>timestamp-property</goal>
+                            </goals>
+                            <phase>validate</phase>
+                            <configuration>
+                                <name>current.year</name>
+                                <pattern>yyyy</pattern>
+                                <locale>en_US</locale>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>aspectj-maven-plugin</artifactId>
+                    <version>${aspectj-plugin.version}</version>
+                    <configuration>
+                        <showWeaveInfo>true</showWeaveInfo>
+                        <source>${maven.compiler.source}</source>
+                        <target>${maven.compiler.target}</target>
+                        <complianceLevel>${java.version}</complianceLevel>
+                        <encoding>UTF-8</encoding>
+                        <verbose>true</verbose>
+                        <Xlint>ignore</Xlint>
+                        <!-- https://www.baeldung.com/aspectj see part 6 -->
+                        <!-- binary weaving requires listing the jars here -->
+                        <outxml>true</outxml>
+                        <weaveDependencies>
+                            <weaveDependency>
+                                <groupId>io.projectreactor</groupId>
+                                <artifactId>reactor-core</artifactId>
+                            </weaveDependency>
+                        </weaveDependencies>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <phase>compile</phase>
+                            <goals>
+                                <goal>compile</goal>
+                                <goal>test-compile</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <dependencies>
+                        <!-- see bottom of link below "Upgrading AspectJ" for explanation of dependency -->
+                        <!-- https://www.mojohaus.org/aspectj-maven-plugin/usage.html -->
+                        <dependency>
+                            <groupId>org.aspectj</groupId>
+                            <artifactId>aspectjtools</artifactId>
+                            <version>${aspectj.version}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>io.projectreactor</groupId>
+                            <artifactId>reactor-test</artifactId>
+                            <version>${reactor-test.version}</version>
+                            <exclusions>
+                                <exclusion>
+                                    <groupId>io.projectreactor</groupId>
+                                    <artifactId>reactor-core</artifactId>
+                                </exclusion>
+                            </exclusions>
+                        </dependency>
+                    </dependencies>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${compiler-plugin.version}</version>
+                    <configuration>
+                        <source>${maven.compiler.source}</source>
+                        <target>${maven.compiler.target}</target>
+                        <excludes>
+                            <!-- also exclude all java files -->
+                            <exclude>**/*.java</exclude>
+                        </excludes>
+                    </configuration>
+                    <!-- skip default compile (otherwise it overrides aspectj's compiler) -->
+                    <executions>
+                        <execution>
+                            <id>default-compile</id>
+                            <phase>none</phase>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${surefire-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <version>${dependency-plugin.version}</version>
+                    <executions>
+                        <!-- copy dependencies -->
+                        <execution>
+                            <id>src-dependencies</id>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>copy-dependencies</goal>
+                            </goals>
+                            <configuration>
+                                <classifier>sources</classifier>
+                                <includeGroupIds>io.projectreactor</includeGroupIds>
+                                <includeArtifactIds>reactor-core</includeArtifactIds>
+                                <outputDirectory>${project.build.directory}</outputDirectory>
+                            </configuration>
+                        </execution>
+                        <!-- unzip them -->
+                        <execution>
+                            <id>unpack</id>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>unpack</goal>
+                            </goals>
+                            <configuration>
+                                <overWriteSnapshots>true</overWriteSnapshots>
+                                <overWriteReleases>true</overWriteReleases>
+                                <artifactItems>
+                                    <artifactItem>
+                                        <groupId>io.projectreactor</groupId>
+                                        <artifactId>reactor-core</artifactId>
+                                        <version>${reactor-core.version}</version>
+                                        <type>jar</type>
+                                        <classifier>sources</classifier>
+                                        <outputDirectory>${project.build.directory}/reactor-sources-unpacked-tmp</outputDirectory>
+                                    </artifactItem>
+                                </artifactItems>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>com.google.code.maven-replacer-plugin</groupId>
+                    <artifactId>replacer</artifactId>
+                    <version>${replacer-plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <id>prepend-modification-notice</id>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>replace</goal>
+                            </goals>
+                            <configuration>
+                                <ignoreMissingFile>false</ignoreMissingFile>
+                                <regex>true</regex>
+                                <includes>
+                                    <include>${project.build.directory}/reactor-sources-unpacked-tmp/**/*</include>
+                                </includes>
+                                <replacements>
+                                    <replacement>
+                                        <token>(\* Copyright \(c\))</token>
+                                        <value>* Modifications copyright (c) ${current.year} Matthew Weis, Kansas State University
+ *
+ * With the exception of this modification notice, this file is an exact copy of the original source file.
+ * However, this source file is NOT attached to the original compiled source, but instead to a version of the source
+ * that has been modified for the "virtual-reactor-hooks" project using aspectj to perform post-compile weaving.
+ */
+/*
+ * Copyright (c)</value>
+                                    </replacement>
+                                </replacements>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>${jar-plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <id>repack</id>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>jar</goal>
+                            </goals>
+                            <configuration>
+                                <classesDirectory>${basedir}/target/reactor-sources-unpacked-tmp</classesDirectory>
+                                <finalName>reactor-core-${reactor-core.version}</finalName>
+                                <classifier>sources-modified</classifier>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-install-plugin</artifactId>
+                    <version>${install-plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <id>install-virtual-reactor-hooks</id>
+                            <phase>install</phase>
+                            <goals>
+                                <goal>install</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>install-virtual-reactor-hooks-sources</id>
+                            <phase>install</phase>
+                            <goals>
+                                <goal>install-file</goal>
+                            </goals>
+                            <configuration>
+                                <file>target/reactor-core-${reactor-core.version}-sources-modified.jar</file>
+                                <groupId>org.sireum.hooks</groupId>
+                                <artifactId>virtual-reactor-hooks</artifactId>
+                                <version>${project.version}</version>
+                                <packaging>jar</packaging>
+                                <classifier>sources</classifier>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+        <plugins>
+            <!-- checks that reactor version properties match ones in the reactor bom -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+            </plugin>
+            <!-- creates current.year property -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+            </plugin>
+            <!-- replaces the compiler plugin to compile with aspect support -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>aspectj-maven-plugin</artifactId>
+            </plugin>
+            <!-- only included because its configuration disables the default compiler -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+            <!-- runs tests -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+            </plugin>
+            <!-- package step 1: copy reactor-core sources jar into /target -->
+            <!-- package step 2: unzip the jar into reactor-sources-unpacked-tmp folder -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+            </plugin>
+            <!-- package step 3: add custom modification warning unpacked sources -->
+            <plugin>
+                <groupId>com.google.code.maven-replacer-plugin</groupId>
+                <artifactId>replacer</artifactId>
+            </plugin>
+            <!-- package step 4: repackage the modified sources into a jar -->
+            <!-- package step 5: package default jar as well -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+            </plugin>
+            <!-- install jar and also install modified source jar as its sources -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-install-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>
