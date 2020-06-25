@@ -19,7 +19,6 @@ package org.sireum.hooks;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.jetbrains.annotations.NotNull;
 import org.sireum.hooks.Utils.ErasedPublisher;
-import reactor.core.CorePublisher;
 import reactor.core.Scannable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -30,6 +29,12 @@ import java.time.Instant;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
+/**
+ * Contains the core public API of the library, specifically methods to enter/exit virtual time and methods
+ * to add a "not currently in virtual time" hint to a {@link Flux} or {@link Mono}.
+ *
+ * @see TimeUtils
+ */
 public final class TimeBarriers {
 
     /**
@@ -139,6 +144,7 @@ public final class TimeBarriers {
         }
     }
 
+    @NotNull
     private static InstrumentationAssemblyException createAssemblyError() {
         return new InstrumentationAssemblyException("TimeBarrier's END_VIRTUAL_TIME logic was invoked, but " +
                 "the publisher was tagged with a DO_NOT_INSTRUMENT_HINT that should have been removed by an upstream " +

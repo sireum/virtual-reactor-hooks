@@ -13,15 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * Modifications copyright (C) 2020 Matthew Weis, Kansas State University
- *
- * With the exception of this modification notice, this file is an exact copy of the original source file.
- * However, this source file is NOT attached to the original compiled source, but instead to a version of the source
- * that has been modified for the "virtual-reactor-hooks" project using aspectj's compile-time weaving.
- */
-
-/*\n* Modifications copyright (C) 2020 Matthew Weis, Kansas State University\n*\n* With the exception of this modification notice, this file is an exact copy of the original source file.\n* However, this source file is NOT attached to the original compiled source, but instead to a version of the source\n* that has been modified for the "virtual-reactor-hooks" project using aspectj's compile-time weaving.\n*/
 
 package org.sireum.hooks;
 
@@ -30,14 +21,24 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import reactor.core.publisher.Flux;
 
+import java.time.Duration;
+
 import static org.sireum.hooks.TimeBarriers.noInstrumentation;
 import static org.sireum.hooks.Utils.proceed;
 
+/**
+ * An AspectJ {@link Aspect} with advice wrapping all {@link reactor.core.publisher.ConnectableFlux} methods that use a
+ * default {@link reactor.core.scheduler.Scheduler} with checks to instead remain on the current
+ * {@link VirtualTimeScheduler} if inside a virtual section.
+ *
+ * @see FluxHooks
+ * @see MonoHooks
+ */
 @Aspect
 public final class ConnectableFluxHooks {
 
-    @Around("execution(public final * reactor.core.publisher.ConnectableFlux.refCount(..)) && args(int, java.time.Duration)")
-    public final Object refCount(ProceedingJoinPoint joinPoint) {
+    @Around(value = "execution(public final * reactor.core.publisher.ConnectableFlux.refCount(..)) && args(minSubscribers, gracePeriod)", argNames = "joinPoint,minSubscribers,gracePeriod")
+    public final Object refCount(ProceedingJoinPoint joinPoint, int minSubscribers, Duration gracePeriod) {
         if (noInstrumentation(joinPoint)) {
             return proceed(joinPoint);
         } else {

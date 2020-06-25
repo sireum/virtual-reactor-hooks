@@ -25,6 +25,9 @@ import reactor.util.function.Tuples;
 
 import java.time.Duration;
 
+/**
+ * A public API with utility methods to support use of the core {@link TimeBarriers} API.
+ */
 public final class TimeUtils {
 
     @NotNull

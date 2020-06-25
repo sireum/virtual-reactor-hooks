@@ -25,7 +25,6 @@ import reactor.util.context.Context;
 import reactor.util.function.Tuple2;
 
 import java.time.Instant;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import static org.sireum.hooks.TimeBarriers.SCHEDULER_CONTEXT_KEY;
@@ -171,7 +170,6 @@ final class BarrierAssembly {
         public void request(long n) {
             if (Operators.validate(n)) {
                 s.request(n);
-            } else {
             }
         }
 
@@ -187,7 +185,6 @@ final class BarrierAssembly {
             if (Operators.validate(this.s, s)) {
                 this.s = s;
                 actual.onSubscribe(this);
-            } else {
             }
         }
 
@@ -215,7 +212,6 @@ final class BarrierAssembly {
             if (!done) {
                 done = true;
                 actual.onComplete();
-            } else {
             }
         }
 

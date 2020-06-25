@@ -21,88 +21,81 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
+import reactor.util.retry.Retry;
 
 import java.time.Duration;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static org.sireum.hooks.TimeBarriers.noInstrumentation;
 import static org.sireum.hooks.Utils.proceed;
 
+/**
+ * An AspectJ {@link Aspect} with advice wrapping all {@link Flux} methods that use a default
+ * {@link reactor.core.scheduler.Scheduler} with checks to instead remain on the current {@link VirtualTimeScheduler}
+ * if inside a virtual section.
+ *
+ * @see MonoHooks
+ * @see ConnectableFluxHooks
+ */
 @Aspect
 public final class FluxHooks {
 
-    @Around("execution(public static * reactor.core.publisher.Flux.interval(..)) && args(java.time.Duration)")
-    public Object interval1(ProceedingJoinPoint joinPoint) {
+    @Around(value = "execution(public static * reactor.core.publisher.Flux.interval(..)) && args(period)", argNames = "joinPoint,period")
+    public Object interval1(ProceedingJoinPoint joinPoint, Duration period) {
         // static methods have no "noInstrumentation" check (because they have no target to scan)
-        final Object[] originalArgs = joinPoint.getArgs();
-        final Duration period = (Duration) originalArgs[0];
         return Utils.virtualFlux(joinPoint, scheduler -> Flux.interval(period, scheduler));
     }
 
-    @Around("execution(public static * reactor.core.publisher.Flux.interval(..)) && args(java.time.Duration, java.time.Duration)")
-    public Object interval2(ProceedingJoinPoint joinPoint) {
+    @Around(value = "execution(public static * reactor.core.publisher.Flux.interval(..)) && args(delay, period)", argNames = "joinPoint,delay,period")
+    public Object interval2(ProceedingJoinPoint joinPoint, Duration delay, Duration period) {
         // static methods have no "noInstrumentation" check (because they have no target to scan)
-        final Object[] originalArgs = joinPoint.getArgs();
-        final Duration delay = (Duration) originalArgs[0];
-        final Duration period = (Duration) originalArgs[1];
         return Utils.virtualFlux(joinPoint, scheduler -> Flux.interval(delay, period, scheduler));
     }
 
-    @Around("execution(public final * reactor.core.publisher.Flux.buffer(..)) && args(java.time.Duration)")
-    public final Object buffer1(ProceedingJoinPoint joinPoint) {
+    @Around(value = "execution(public final * reactor.core.publisher.Flux.buffer(..)) && args(bufferingTimespan)", argNames = "joinPoint,bufferingTimespan")
+    public final Object buffer1(ProceedingJoinPoint joinPoint, Duration bufferingTimespan) {
         if (noInstrumentation(joinPoint)) {
             return proceed(joinPoint);
         } else {
-            final Object[] originalArgs = joinPoint.getArgs();
-            final Duration bufferingTimespan = (Duration) originalArgs[0];
             final Flux<?> target = (Flux<?>) joinPoint.getTarget();
             return Utils.virtualFlux(joinPoint, scheduler -> target.buffer(bufferingTimespan, scheduler));
         }
     }
 
-    @Around("execution(public final * reactor.core.publisher.Flux.buffer(..)) && args(java.time.Duration, java.time.Duration)")
-    public final Object buffer2(ProceedingJoinPoint joinPoint) {
+    @Around(value = "execution(public final * reactor.core.publisher.Flux.buffer(..)) && args(bufferingTimespan, openBufferEvery)", argNames = "joinPoint,bufferingTimespan,openBufferEvery")
+    public final Object buffer2(ProceedingJoinPoint joinPoint, Duration bufferingTimespan, Duration openBufferEvery) {
         if (noInstrumentation(joinPoint)) {
             return proceed(joinPoint);
         } else {
-            final Object[] originalArgs = joinPoint.getArgs();
-            final Duration bufferingTimespan = (Duration) originalArgs[0];
-            final Duration openBufferEvery = (Duration) originalArgs[1];
             final Flux<?> target = (Flux<?>) joinPoint.getTarget();
             return Utils.virtualFlux(joinPoint, scheduler -> target.buffer(bufferingTimespan, openBufferEvery, scheduler));
         }
     }
 
-    @Around("execution(public final * reactor.core.publisher.Flux.bufferTimeout(..)) && args(int, java.time.Duration)")
-    public final Object bufferTimeout1(ProceedingJoinPoint joinPoint) {
+    @Around(value = "execution(public final * reactor.core.publisher.Flux.bufferTimeout(..)) && args(maxSize, maxTime)", argNames = "joinPoint,maxSize,maxTime")
+    public final Object bufferTimeout1(ProceedingJoinPoint joinPoint, int maxSize, Duration maxTime) {
         if (noInstrumentation(joinPoint)) {
             return proceed(joinPoint);
         } else {
-            final Object[] originalArgs = joinPoint.getArgs();
-            final int maxSize = (int) originalArgs[0];
-            final Duration maxTime = (Duration) originalArgs[1];
             final Flux<?> target = (Flux<?>) joinPoint.getTarget();
             return Utils.virtualFlux(joinPoint, scheduler -> target.bufferTimeout(maxSize, maxTime, scheduler));
         }
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    @Around("execution(public final * reactor.core.publisher.Flux.bufferTimeout(..)) && args(int, java.time.Duration, java.util.function.Supplier)")
-    public final Object bufferTimeout2(ProceedingJoinPoint joinPoint) {
+    @Around(value = "execution(public final * reactor.core.publisher.Flux.bufferTimeout(..)) && args(maxSize, maxTime, bufferSupplier)", argNames = "joinPoint,maxSize,maxTime,bufferSupplier")
+    public final Object bufferTimeout2(ProceedingJoinPoint joinPoint, int maxSize, Duration maxTime, Supplier bufferSupplier) {
         if (noInstrumentation(joinPoint)) {
             return proceed(joinPoint);
         } else {
-            final Object[] originalArgs = joinPoint.getArgs();
-            final int maxSize = (int) originalArgs[0];
-            final Duration maxTime = (Duration) originalArgs[1];
-            final Supplier bufferSupplier = (Supplier) originalArgs[2];
             final Flux<?> target = (Flux<?>) joinPoint.getTarget();
             return Utils.virtualFlux(joinPoint, scheduler -> target.bufferTimeout(maxSize, maxTime, scheduler, bufferSupplier));
         }
     }
 
-    @Around("execution(public final * reactor.core.publisher.Flux.cache(..)) && args(java.time.Duration)")
-    public final Object cache1(ProceedingJoinPoint joinPoint) {
+    @Around(value = "execution(public final * reactor.core.publisher.Flux.cache(..)) && args(ttl)", argNames = "joinPoint,ttl")
+    public final Object cache1(ProceedingJoinPoint joinPoint, Duration ttl) {
         if (noInstrumentation(joinPoint)) {
             return proceed(joinPoint);
         } else {
@@ -113,8 +106,8 @@ public final class FluxHooks {
         }
     }
 
-    @Around("execution(public final * reactor.core.publisher.Flux.cache(..)) && args(int, java.time.Duration)")
-    public final Object cache2(ProceedingJoinPoint joinPoint) {
+    @Around(value = "execution(public final * reactor.core.publisher.Flux.cache(..)) && args(history, ttl)", argNames = "joinPoint,history,ttl")
+    public final Object cache2(ProceedingJoinPoint joinPoint, int history, Duration ttl) {
         if (noInstrumentation(joinPoint)) {
             return proceed(joinPoint);
         } else {
@@ -125,25 +118,21 @@ public final class FluxHooks {
         }
     }
 
-    @Around("execution(public final * reactor.core.publisher.Flux.delayElements(..)) && args(java.time.Duration)")
-    public final Object delayElements(ProceedingJoinPoint joinPoint) {
+    @Around(value = "execution(public final * reactor.core.publisher.Flux.delayElements(..)) && args(delay)", argNames = "joinPoint,delay")
+    public final Object delayElements(ProceedingJoinPoint joinPoint, Duration delay) {
         if (noInstrumentation(joinPoint)) {
             return proceed(joinPoint);
         } else {
-            final Object[] originalArgs = joinPoint.getArgs();
-            final Duration delay = (Duration) originalArgs[0];
             final Flux<?> target = (Flux<?>) joinPoint.getTarget();
             return Utils.virtualFlux(joinPoint, scheduler -> target.delayElements(delay, scheduler));
         }
     }
 
-    @Around("execution(public final * reactor.core.publisher.Flux.delaySequence(..)) && args(java.time.Duration)")
-    public final Object delaySequence(ProceedingJoinPoint joinPoint) {
+    @Around(value = "execution(public final * reactor.core.publisher.Flux.delaySequence(..)) && args(delay)", argNames = "joinPoint,delay")
+    public final Object delaySequence(ProceedingJoinPoint joinPoint, Duration delay) {
         if (noInstrumentation(joinPoint)) {
             return proceed(joinPoint);
         } else {
-            final Object[] originalArgs = joinPoint.getArgs();
-            final Duration delay = (Duration) originalArgs[0];
             final Flux<?> target = (Flux<?>) joinPoint.getTarget();
             return Utils.virtualFlux(joinPoint, scheduler -> target.delaySequence(delay, scheduler));
         }
@@ -156,8 +145,8 @@ public final class FluxHooks {
      * Since everything is in virtual time based on arrival of elements, delaying subscription has
      * NO EFFECTS in virtual time. This is because virtual time is always 0 until the first element arrives.
      */
-    @Around("execution(public final * reactor.core.publisher.Flux.delaySubscription(..)) && args(java.time.Duration)")
-    public final Object delaySubscription(ProceedingJoinPoint joinPoint) {
+    @Around(value = "execution(public final * reactor.core.publisher.Flux.delaySubscription(..)) && args(delay)", argNames = "joinPoint,delay")
+    public final Object delaySubscription(ProceedingJoinPoint joinPoint, Duration delay) {
         if (noInstrumentation(joinPoint)) {
             return proceed(joinPoint);
         } else {
@@ -165,7 +154,7 @@ public final class FluxHooks {
         }
     }
 
-    @Around("execution(public final * reactor.core.publisher.Flux.elapsed(..)) && args()")
+    @Around(value = "execution(public final * reactor.core.publisher.Flux.elapsed(..)) && args()", argNames = "joinPoint")
     public final Object elapsed(ProceedingJoinPoint joinPoint) {
         if (noInstrumentation(joinPoint)) {
             return proceed(joinPoint);
@@ -175,8 +164,9 @@ public final class FluxHooks {
         }
     }
 
-    @Around("execution(public final * reactor.core.publisher.Flux.onBackpressureBuffer(..)) && args(java.time.Duration, int, java.util.function.Consumer)")
-    public final Object onBackpressureBuffer(ProceedingJoinPoint joinPoint) {
+    @SuppressWarnings("rawtypes")
+    @Around(value = "execution(public final * reactor.core.publisher.Flux.onBackpressureBuffer(..)) && args(ttl, maxSize, onBufferEviction)", argNames = "joinPoint,ttl,maxSize,onBufferEviction")
+    public final Object onBackpressureBuffer(ProceedingJoinPoint joinPoint, Duration ttl, int maxSize, Consumer onBufferEviction) {
         if (noInstrumentation(joinPoint)) {
             return proceed(joinPoint);
         } else {
@@ -187,8 +177,8 @@ public final class FluxHooks {
         }
     }
 
-    @Around("execution(public final * reactor.core.publisher.Flux.replay(..)) && args(java.time.Duration)")
-    public final Object replay1(ProceedingJoinPoint joinPoint) {
+    @Around(value = "execution(public final * reactor.core.publisher.Flux.replay(..)) && args(ttl)", argNames = "joinPoint,ttl")
+    public final Object replay1(ProceedingJoinPoint joinPoint, Duration ttl) {
         if (noInstrumentation(joinPoint)) {
             return proceed(joinPoint);
         } else {
@@ -204,8 +194,8 @@ public final class FluxHooks {
         }
     }
 
-    @Around("execution(public final * reactor.core.publisher.Flux.replay(..)) && args(int, java.time.Duration)")
-    public final Object replay2(ProceedingJoinPoint joinPoint) {
+    @Around(value = "execution(public final * reactor.core.publisher.Flux.replay(..)) && args(history, ttl)", argNames = "joinPoint,history,ttl")
+    public final Object replay2(ProceedingJoinPoint joinPoint, int history, Duration ttl) {
         if (noInstrumentation(joinPoint)) {
             return proceed(joinPoint);
         } else {
@@ -221,8 +211,8 @@ public final class FluxHooks {
         }
     }
 
-    @Around("execution(public final * reactor.core.publisher.Flux.retryWhen(..)) && args(reactor.util.retry.Retry)")
-    public final Object retryWhen(ProceedingJoinPoint joinPoint) {
+    @Around(value = "execution(public final * reactor.core.publisher.Flux.retryWhen(..)) && args(retrySpec)", argNames = "joinPoint,retrySpec")
+    public final Object retryWhen(ProceedingJoinPoint joinPoint, Retry retrySpec) {
         if (noInstrumentation(joinPoint)) {
             return proceed(joinPoint);
         } else {
@@ -233,57 +223,48 @@ public final class FluxHooks {
         }
     }
 
-    @Around("execution(public final * reactor.core.publisher.Flux.skip(..)) && args(java.time.Duration)")
-    public final Object skip(ProceedingJoinPoint joinPoint) {
+    @Around(value = "execution(public final * reactor.core.publisher.Flux.skip(..)) && args(timespan)", argNames = "joinPoint,timespan")
+    public final Object skip(ProceedingJoinPoint joinPoint, Duration timespan) {
         if (noInstrumentation(joinPoint)) {
             return proceed(joinPoint);
         } else {
-            final Object[] originalArgs = joinPoint.getArgs();
-            final Duration timespan = (Duration) originalArgs[0];
             final Flux<?> target = (Flux<?>) joinPoint.getTarget();
             return Utils.virtualFlux(joinPoint, scheduler -> target.skip(timespan, scheduler));
         }
     }
 
-    @Around("execution(public final * reactor.core.publisher.Flux.take(..)) && args(java.time.Duration)")
-    public final Object take(ProceedingJoinPoint joinPoint) {
+    @Around(value = "execution(public final * reactor.core.publisher.Flux.take(..)) && args(timespan)", argNames = "joinPoint,timespan")
+    public final Object take(ProceedingJoinPoint joinPoint, Duration timespan) {
         if (noInstrumentation(joinPoint)) {
             return proceed(joinPoint);
         } else {
-            final Object[] originalArgs = joinPoint.getArgs();
-            final Duration timespan = (Duration) originalArgs[0];
             final Flux<?> target = (Flux<?>) joinPoint.getTarget();
             return Utils.virtualFlux(joinPoint, scheduler -> target.take(timespan, scheduler));
         }
     }
 
-    @Around("execution(public final * reactor.core.publisher.Flux.timeout(..)) && args(java.time.Duration)")
-    public final Object timeout1(ProceedingJoinPoint joinPoint) {
+    @Around(value = "execution(public final * reactor.core.publisher.Flux.timeout(..)) && args(timeout)", argNames = "joinPoint,timeout")
+    public final Object timeout1(ProceedingJoinPoint joinPoint, Duration timeout) {
         if (noInstrumentation(joinPoint)) {
             return proceed(joinPoint);
         } else {
-            final Object[] originalArgs = joinPoint.getArgs();
-            final Duration timeout = (Duration) originalArgs[0];
             final Flux<?> target = (Flux<?>) joinPoint.getTarget();
             return Utils.virtualFlux(joinPoint, scheduler -> target.timeout(timeout, null, scheduler));
         }
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    @Around("execution(public final * reactor.core.publisher.Flux.timeout(..)) && args(java.time.Duration, org.reactivestreams.Publisher)")
-    public final Object timeout2(ProceedingJoinPoint joinPoint) {
+    @Around(value = "execution(public final * reactor.core.publisher.Flux.timeout(..)) && args(timeout, publisher)", argNames = "joinPoint,timeout,publisher")
+    public final Object timeout2(ProceedingJoinPoint joinPoint, Duration timeout, Publisher publisher) {
         if (noInstrumentation(joinPoint)) {
             return proceed(joinPoint);
         } else {
-            final Object[] originalArgs = joinPoint.getArgs();
-            final Duration timeout = (Duration) originalArgs[0];
-            final Publisher publisher = (Publisher) originalArgs[1];
             final Flux<?> target = (Flux<?>) joinPoint.getTarget();
             return Utils.virtualFlux(joinPoint, scheduler -> target.timeout(timeout, publisher, scheduler));
         }
     }
 
-    @Around("execution(public final * reactor.core.publisher.Flux.timestamp(..)) && args()")
+    @Around(value = "execution(public final * reactor.core.publisher.Flux.timestamp(..)) && args()", argNames = "joinPoint")
     public final Object timestamp(ProceedingJoinPoint joinPoint) {
         if (noInstrumentation(joinPoint)) {
             return proceed(joinPoint);
@@ -293,39 +274,31 @@ public final class FluxHooks {
         }
     }
 
-    @Around("execution(public final * reactor.core.publisher.Flux.window(..)) && args(java.time.Duration)")
-    public final Object window1(ProceedingJoinPoint joinPoint) {
+    @Around(value = "execution(public final * reactor.core.publisher.Flux.window(..)) && args(windowingTimespan)", argNames = "joinPoint,windowingTimespan")
+    public final Object window1(ProceedingJoinPoint joinPoint, Duration windowingTimespan) {
         if (noInstrumentation(joinPoint)) {
             return proceed(joinPoint);
         } else {
-            final Object[] originalArgs = joinPoint.getArgs();
-            final Duration windowingTimespan = (Duration) originalArgs[0];
             final Flux<?> target = (Flux<?>) joinPoint.getTarget();
             return Utils.virtualFlux(joinPoint, scheduler -> target.window(windowingTimespan, scheduler));
         }
     }
 
-    @Around("execution(public final * reactor.core.publisher.Flux.window(..)) && args(java.time.Duration, java.time.Duration)")
-    public final Object window2(ProceedingJoinPoint joinPoint) {
+    @Around(value = "execution(public final * reactor.core.publisher.Flux.window(..)) && args(windowingTimespan, openWindowEvery)", argNames = "joinPoint,windowingTimespan,openWindowEvery")
+    public final Object window2(ProceedingJoinPoint joinPoint,Duration windowingTimespan, Duration openWindowEvery) {
         if (noInstrumentation(joinPoint)) {
             return proceed(joinPoint);
         } else {
-            final Object[] originalArgs = joinPoint.getArgs();
-            final Duration windowingTimespan = (Duration) originalArgs[0];
-            final Duration openWindowEvery = (Duration) originalArgs[1];
             final Flux<?> target = (Flux<?>) joinPoint.getTarget();
             return Utils.virtualFlux(joinPoint, scheduler -> target.window(windowingTimespan, openWindowEvery, scheduler));
         }
     }
 
-    @Around("execution(public final * reactor.core.publisher.Flux.windowTimeout(..)) && args(int, java.time.Duration)")
-    public final Object windowTimeout(ProceedingJoinPoint joinPoint) {
+    @Around(value = "execution(public final * reactor.core.publisher.Flux.windowTimeout(..)) && args(maxSize, maxTime)", argNames = "joinPoint,maxSize,maxTime")
+    public final Object windowTimeout(ProceedingJoinPoint joinPoint, int maxSize, Duration maxTime) {
         if (noInstrumentation(joinPoint)) {
             return proceed(joinPoint);
         } else {
-            final Object[] originalArgs = joinPoint.getArgs();
-            final int maxSize = (int) originalArgs[0];
-            final Duration maxTime = (Duration) originalArgs[1];
             final Flux<?> target = (Flux<?>) joinPoint.getTarget();
             return Utils.virtualFlux(joinPoint, scheduler -> target.windowTimeout(maxSize, maxTime, scheduler));
         }
