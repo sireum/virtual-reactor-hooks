@@ -1,5 +1,6 @@
 
 !mvnw.cmd
+!.mvn/wrapper/maven-wrapper.jar
 
 # Created by https://www.gitignore.io/api/c,git,c++,lua,java,basic,linux,macos,maven,gradle,windows,eclipse,netbeans,intellij
 # Edit at https://www.gitignore.io/?templates=c,git,c++,lua,java,basic,linux,macos,maven,gradle,windows,eclipse,netbeans,intellij
