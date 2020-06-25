@@ -62,7 +62,7 @@
         <profile>
             <id>debug</id>
             <activation>
-                <activeByDefault>true</activeByDefault>
+                <activeByDefault>false</activeByDefault>
             </activation>
             <properties>
                 <is-debug-profile-active>true</is-debug-profile-active>
