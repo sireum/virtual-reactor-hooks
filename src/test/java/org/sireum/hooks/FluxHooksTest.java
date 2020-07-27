@@ -21,12 +21,12 @@ import org.sireum.hooks.ErrorSchedulerFactory.SchedulerCreationException;
 import org.testng.Assert;
 import org.testng.annotations.*;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Hooks;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 import reactor.test.publisher.PublisherProbe;
 
+import reactor.test.publisher.TestPublisher;
 import reactor.util.function.Tuple2;
 import reactor.util.retry.Retry;
 
@@ -62,7 +62,6 @@ public class FluxHooksTest {
     void takeTest() {
         final Function<Flux<String>, Flux<Tuple2<Long, String>>> flux = abcdef -> abcdef
                 .timestamp()
-                .log()
                 .take(Duration.ofSeconds(6));
 
         Verifier.create(flux)
@@ -270,7 +269,7 @@ public class FluxHooksTest {
     void doNotInstrumentHintTest() {
         final Flux<Tuple2<Long, List<String>>> flux = Flux.just(a, b, c, d, e, f)
                 // "no instrumentation" hint means delayElements "noInstrumentation(joinPoint)" check should be true
-                .transform(TimeBarriers::NOT_VIRTUAL_HINT)
+                .transform(TimeBarriers::ATTACH_NOT_VIRTUAL_HINT)
                 .map(element -> tuple("some random transformation", element))
                 .map(Tuple2::getT2)
 
@@ -300,8 +299,7 @@ public class FluxHooksTest {
     void delayTest() {
         final Function<Flux<String>, Flux<Tuple2<Long, String>>> flux = abcdef -> abcdef
                 .delayElements(Duration.ofSeconds(3))
-                .elapsed()
-                .log();
+                .elapsed();
 
         Verifier.create(flux)
                 .expectSubscription()
@@ -549,8 +547,7 @@ public class FluxHooksTest {
     @Test//(timeOut = DEFAULT_TEST_TIMEOUT)
     void bufferTest() {
         final Function<Flux<String>, Flux<List<String>>> flux = abcdef -> abcdef
-                .buffer(Duration.ofSeconds(3))
-                .log();
+                .buffer(Duration.ofSeconds(3));
 
         // buffers are [startTime, endTime)     i.e. inclusive, exclusive
 
@@ -771,8 +768,7 @@ public class FluxHooksTest {
                 .timestamp()
                 .delayElements(Duration.ofSeconds(2))
                 .map(Tuple2::getT2)
-                .bufferTimeout(10, Duration.ofSeconds(2))
-                .log();
+                .bufferTimeout(10, Duration.ofSeconds(2));
 
 
         StepVerifier.withVirtualTime(supplier)
@@ -1065,7 +1061,7 @@ public class FluxHooksTest {
                 .expectNoEvent(Duration.ofSeconds(1)) // time = 12 sec
                 .expectNext(list("e", "f"))
                 // no more time needs to pass because the mere evaluation of f upstream
-                // causes onComplete() to signal which cuts off the final buffer off short
+                // causes onComplete() to signal which cuts the final buffer off short
                 // and returns its contents (containing only f) immediately.
                 .expectNext(list("f"))
                 .verifyComplete();
@@ -1233,48 +1229,7 @@ public class FluxHooksTest {
                 .verifyComplete();
     }
 
-    // todo basic interval test
-
-    @Ignore // todo want to fix this?
-    @Test//(timeOut = DEFAULT_TEST_TIMEOUT)
-    void intervalTest3_withSomeRealTimeVariant() {
-
-        // in the testing env, must explicitly opt-in for non-virtual schedulers
-        Schedulers.resetFactory();
-
-        final Flux<Long> flux1 = Flux.<Tuple2<Long, Void>>empty()
-                .transform(TimeBarriers::NOT_VIRTUAL_HINT)
-                .delayElements(Duration.ofMillis(10))
-                .transform(TimeBarriers::ENTER_VIRTUAL_TIME)
-                .cast(Long.class)
-                .concatWith(Flux.interval(Duration.ofMinutes(1)))
-                .skip(Duration.ofMinutes(2)) // notice that 2-minute skip...
-                .sample(Duration.ofMinutes(2))
-                .take(5)
-                .transform(TimeBarriers::EXIT_VIRTUAL_TIME);
-
-        // recall it takes 1 min for the initial "0" to be emitted
-        final Flux<Long> flux2 = Flux.<Tuple2<Long, Void>>empty()
-                .transform(TimeBarriers::NOT_VIRTUAL_HINT)
-                .delayElements(Duration.ofSeconds(0))
-                .transform(TimeBarriers::ENTER_VIRTUAL_TIME)
-                .cast(Long.class)
-                .concatWith(Flux.interval(Duration.ofMinutes(1)))
-                .skip(Duration.ofMinutes(1).plusMillis(1)) // ...actually only first 1min 1ms "cutoff" matters to sample
-                .sample(Duration.ofMinutes(2))
-                .take(5)
-                .transform(TimeBarriers::EXIT_VIRTUAL_TIME);
-
-        StepVerifier.create(flux1)
-                .expectSubscription()
-                .expectNext(2L, 4L, 6L, 8L, 10L)
-                .verifyComplete();
-
-        StepVerifier.create(flux2)
-                .expectSubscription()
-                .expectNext(2L, 4L, 6L, 8L, 10L)
-                .verifyComplete();
-    }
+    // todo interval test
 
     @Test//(timeOut = DEFAULT_TEST_TIMEOUT)
     void skipBehaviorTest_OneSkip() {
@@ -1518,7 +1473,7 @@ public class FluxHooksTest {
 
         StepVerifier.create(flux)
                 .expectSubscription()
-                .verifyError(InstrumentationAssemblyException.class);
+                .verifyError(AssemblyInstrumentationException.class);
     }
 
     @Test//(timeOut = DEFAULT_TEST_TIMEOUT)
@@ -1530,7 +1485,7 @@ public class FluxHooksTest {
 
         StepVerifier.create(flux)
                 .expectSubscription()
-                .verifyError(InstrumentationAssemblyException.class);
+                .verifyError(AssemblyInstrumentationException.class);
     }
 
     @Test//(timeOut = DEFAULT_TEST_TIMEOUT)
@@ -1538,7 +1493,7 @@ public class FluxHooksTest {
         Schedulers.resetFactory();
 
         // replay throws instantly due to issue with propagating error signal and converting to connectable flux
-        Assert.assertThrows(InstrumentationAssemblyException.class, () ->
+        Assert.assertThrows(AssemblyInstrumentationException.class, () ->
                 Flux.just(a, b, c, d, e, f)
                         .transform(TimeBarriers::ENTER_VIRTUAL_TIME)
                         .replay(Duration.ofSeconds(2))
@@ -1546,7 +1501,7 @@ public class FluxHooksTest {
 
         // it also throws it cannot find a noInstrumentation hint at assembly time
         // because its impossible to do the proper check at subscription time
-        Assert.assertThrows(InstrumentationAssemblyException.class, () ->
+        Assert.assertThrows(AssemblyInstrumentationException.class, () ->
                 Flux.just(a, b, c, d, e, f).replay(Duration.ofSeconds(2)));
 
         // this is not an issue if noInstrumentation is inferred after an EXIT_VIRTUAL_TIME
@@ -1558,7 +1513,7 @@ public class FluxHooksTest {
 
         // otherwise the user can work around this with a hint if noInstrumentation can not be inferred
         Flux.just(a, b, c, d, e, f)
-                .transform(TimeBarriers::NOT_VIRTUAL_HINT)
+                .transform(TimeBarriers::ATTACH_NOT_VIRTUAL_HINT)
                 .replay(Duration.ofSeconds(2))
                 .connect();
     }
@@ -1568,7 +1523,7 @@ public class FluxHooksTest {
         Schedulers.resetFactory();
 
         // replay throws instantly due to issue with propagating error signal and converting to connectable flux
-        Assert.assertThrows(InstrumentationAssemblyException.class, () ->
+        Assert.assertThrows(AssemblyInstrumentationException.class, () ->
                 Flux.just(a, b, c, d, e, f)
                         .transform(TimeBarriers::ENTER_VIRTUAL_TIME)
                         .replay(1, Duration.ofSeconds(2))
@@ -1576,7 +1531,7 @@ public class FluxHooksTest {
 
         // it also throws it cannot find a noInstrumentation hint at assembly time
         // because its impossible to do the proper check at subscription time
-        Assert.assertThrows(InstrumentationAssemblyException.class, () ->
+        Assert.assertThrows(AssemblyInstrumentationException.class, () ->
                 Flux.just(a, b, c, d, e, f).replay(1, Duration.ofSeconds(2)));
 
         // this is not an issue if noInstrumentation can be inferred
@@ -1588,7 +1543,7 @@ public class FluxHooksTest {
 
         // and the user can always work around this with a hint if noInstrumentation can not be inferred
         Flux.just(a, b, c, d, e, f)
-                .transform(TimeBarriers::NOT_VIRTUAL_HINT)
+                .transform(TimeBarriers::ATTACH_NOT_VIRTUAL_HINT)
                 .replay(1, Duration.ofSeconds(2))
                 .connect();
     }
@@ -1602,7 +1557,7 @@ public class FluxHooksTest {
 
         StepVerifier.create(flux)
                 .expectSubscription()
-                .verifyError(InstrumentationAssemblyException.class);
+                .verifyError(AssemblyInstrumentationException.class);
     }
 
     @Test//(timeOut = DEFAULT_TEST_TIMEOUT)
@@ -1614,7 +1569,7 @@ public class FluxHooksTest {
 
         StepVerifier.create(flux)
                 .expectSubscription()
-                .verifyError(InstrumentationAssemblyException.class);
+                .verifyError(AssemblyInstrumentationException.class);
     }
 
     @Test//(timeOut = DEFAULT_TEST_TIMEOUT)
@@ -1626,7 +1581,6 @@ public class FluxHooksTest {
                 .timestamp()
                 .transform(TimeBarriers::EXIT_VIRTUAL_TIME);
 
-        // todo this way correct?
         StepVerifier.create(flux)
                 .expectSubscription()
                 .expectNext(tuple( 3000L, "a"))

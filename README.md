@@ -1,6 +1,8 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
+
+
 <!-- GETTING STARTED -->
 ## Getting Started
 
@@ -9,18 +11,18 @@
 <dependency>
     <groupId>org.sireum.hooks</groupId>
     <artifactId>virtual-reactor-hooks</artifactId>
-    <version>0.1-SNAPSHOT</version>
+    <version>3.3.5.RELEASE-beta</version>
 </dependency>
 ```
 
 #### Gradle
 ```gradle
-compile group: 'org.sireum.hooks', name: 'virtual-reactor-hooks', version: '0.1-SNAPSHOT'
+compile group: 'org.sireum.hooks', name: 'virtual-reactor-hooks', version: '3.3.5.RELEASE-beta'
 ```
 
 #### Sbt
 ```sbt
-libraryDependencies += "org.sireum.hooks" % "virtual-reactor-hooks" % "0.1-SNAPSHOT"
+libraryDependencies += "org.sireum.hooks" % "virtual-reactor-hooks" % "3.3.5.RELEASE-beta"
 ```
 
 <!-- USAGE EXAMPLES -->
@@ -90,8 +92,7 @@ clock, not a scheduler.
 
 For any operator that has a default scheduler, reactor-virtual-hooks
 simply chooses to prefer the subscriber's virtual scheduler to the default if the call was made inside a virtual 
-section. This means that 
-unsupported operators
+section.
 
 <!-- LICENSE -->
 ## License

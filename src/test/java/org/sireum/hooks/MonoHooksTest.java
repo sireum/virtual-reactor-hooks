@@ -19,7 +19,6 @@ package org.sireum.hooks;
 import org.sireum.hooks.ErrorSchedulerFactory.SchedulerCreationException;
 import org.testng.Assert;
 import org.testng.annotations.*;
-import reactor.core.publisher.Hooks;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
@@ -128,7 +127,7 @@ public class MonoHooksTest {
     @Test
     void doNotInstrumentHintTest() {
         final Mono<Tuple2<Long, String>> flux = Mono.just(a)
-                .transform(TimeBarriers::NOT_VIRTUAL_HINT)
+                .transform(TimeBarriers::ATTACH_NOT_VIRTUAL_HINT)
                 .transform(TimeBarriers::ENTER_VIRTUAL_TIME)
                 .timestamp()
                 .transform(TimeBarriers::EXIT_VIRTUAL_TIME);
@@ -140,9 +139,10 @@ public class MonoHooksTest {
                 .verify();
     }
 
-    // todo can delay be fixed? Could just force them to use delayElement (same thing)
+    // todo delay test (is it possible / worth recommending?)
+
     @Test
-    void delayTest() {
+    void delayTupleTest() {
         final Mono<Tuple2<Long,String>> flux = TimeUtils.delayTuple(Duration.ofSeconds(3))
                 .transform(TimeBarriers::ENTER_VIRTUAL_TIME)
                 .map(n -> "a")
@@ -318,7 +318,7 @@ public class MonoHooksTest {
 
     @Test(invocationCount = 2)
     void verifySchedulerErrorFactoryInstallation() {
-        verifySchedulerInstallations();
+        // verifySchedulerInstallations();
 
         // install a VirtualTimeScheduler
         // since this is a repeated test, this will cause an exception if the @BeforeEach is not resetting properly
@@ -345,7 +345,7 @@ public class MonoHooksTest {
 
         StepVerifier.create(mono)
                 .expectSubscription()
-                .expectError(InstrumentationAssemblyException.class)
+                .expectError(AssemblyInstrumentationException.class)
                 .verify();
     }
 
@@ -358,7 +358,7 @@ public class MonoHooksTest {
 
         StepVerifier.create(mono)
                 .expectSubscription()
-                .expectError(InstrumentationAssemblyException.class)
+                .expectError(AssemblyInstrumentationException.class)
                 .verify();
     }
 

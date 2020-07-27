@@ -23,8 +23,8 @@
     </weaver>
 
     <aspects>
-        <aspect name="org.sireum.hooks.FluxHooks" />
-        <aspect name="org.sireum.hooks.MonoHooks" />
-        <aspect name="org.sireum.hooks.ConnectableFluxHooks" />
+        <aspect name="org.sireum.hooks.ReactorAdvice.FluxHooks" />
+        <aspect name="org.sireum.hooks.ReactorAdvice.MonoHooks" />
+        <aspect name="org.sireum.hooks.ReactorAdvice.ConnectableFluxHooks" />
     </aspects>
 </aspectj>

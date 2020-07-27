@@ -26,7 +26,7 @@ final class ErrorSchedulerFactory implements Schedulers.Factory {
 
     // use Schedulers.resetFactory() to uninstall
     public static void install() {
-        Schedulers.setFactory(new ErrorSchedulerFactory());
+        Schedulers.setFactory(new ErrorSchedulerFactory()); // todo uncomment
     }
 
     @Override

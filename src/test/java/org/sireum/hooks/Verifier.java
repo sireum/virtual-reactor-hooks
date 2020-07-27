@@ -97,15 +97,6 @@ public class Verifier<T> {
 
     public final void verifyComplete() {
 
-        System.out.println("verifying testplan:");
-
-        if (expectSubscription) {
-            System.out.println(".expectSubscription()");
-        }
-        steps.iterator().forEachRemaining(it -> {
-            System.out.println(it);
-        });
-
         // verify instrumented first
         AssertionError instrumentedError = null;
         try {
@@ -152,7 +143,7 @@ public class Verifier<T> {
             case 4: return current.expectNext(values.get(0),values.get(1),values.get(2),values.get(3));
             case 5: return current.expectNext(values.get(0),values.get(1),values.get(2),values.get(3),values.get(4));
             case 6: return current.expectNext(values.get(0),values.get(1),values.get(2),values.get(3),values.get(4),values.get(5));
-            default: return current.expectNext((T) values.toArray());
+            default: return current.expectNext((T) values.toArray()); // todo can make default, was for sanity check
         }
     }
 
@@ -215,7 +206,7 @@ public class Verifier<T> {
     }
 
     public static <T,V> Verifier<V> create(Function<? super Flux<T>, ? extends Publisher<V>> body, List<T> values, Duration delay) {
-        final List<Tuple2<Long, T>> tuples = IntStream.range(0, values.size())
+        final List<Tuple2<Long,T>> tuples = IntStream.range(0, values.size())
                 .mapToObj(i -> Tuples.of(delay.multipliedBy(i+1).toMillis(), values.get(i))).collect(Collectors.toList());
 
         final Flux<V> flux = createInstrumentedFluxHead(tuples, null).transform(body).transform(TimeBarriers::EXIT_VIRTUAL_TIME);
@@ -224,11 +215,13 @@ public class Verifier<T> {
         return new Verifier<>(flux, vflux, false, Collections.emptyList());
     }
 
-    private static <T> Flux<T> createInstrumentedFluxHead(List<Tuple2<Long, T>> values, @Nullable Scheduler scheduler) {
+    private static <T> Flux<T> createInstrumentedFluxHead(List<Tuple2<Long,T>> values, @Nullable Scheduler scheduler) {
         if (scheduler != null) {
-            return Flux.fromIterable(values).publishOn(scheduler).transform(TimeBarriers::ENTER_VIRTUAL_TIME);
+            return Flux.fromIterable(values).publishOn(scheduler)
+                    .transform(TimeBarriers::ENTER_VIRTUAL_TIME);
         } else {
-            return Flux.fromIterable(values).transform(TimeBarriers::ENTER_VIRTUAL_TIME);
+            return Flux.fromIterable(values)
+                    .transform(TimeBarriers::ENTER_VIRTUAL_TIME);
         }
     }
 

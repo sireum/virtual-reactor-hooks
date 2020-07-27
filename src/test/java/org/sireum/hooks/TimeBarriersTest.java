@@ -16,7 +16,6 @@
 
 package org.sireum.hooks;
 
-import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
@@ -30,7 +29,10 @@ import reactor.util.function.Tuple2;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
+import java.util.concurrent.*;
 
+import static java.util.Collections.nCopies;
 import static org.sireum.hooks.TestConstants.*;
 
 public class TimeBarriersTest {
@@ -97,30 +99,190 @@ public class TimeBarriersTest {
                 .verifyComplete();
     }
 
+    @Test//(timeOut = DEFAULT_TEST_TIMEOUT)
+    void functionContingentEndTime() {
+        final long startTimeAbsoluteMs = 5_000L;
+        final long stopTimeDeltaMs = 3_000L;
+
+        final Flux<Tuple2<Long,Long>> flux = TimeUtils.intervalTuples(Duration.ofSeconds(1))
+                .skipWhile(stamped -> stamped.getT1() < startTimeAbsoluteMs)
+                .transform(it -> TimeBarriers.ENTER_VIRTUAL_TIME(it, stopTime -> stopTime.plusMillis(stopTimeDeltaMs)))
+                .take(4)
+                .timestamp()
+                .transform(it -> TimeBarriers.EXIT_VIRTUAL_TIME(it, Instant.ofEpochMilli(startTimeAbsoluteMs)));
+
+        StepVerifier.create(flux)
+                .expectNext(tuple(5000L, 4L))
+                .expectNext(tuple(6000L, 5L))
+                .expectNext(tuple(7000L, 6L))
+                .expectNext(tuple(8000L, 7L))
+                .verifyComplete();
+    }
+
+    @Test//(timeOut = DEFAULT_TEST_TIMEOUT)
+    void unsupportedStartTimeShouldFail() {
+        final Flux<String> flux = Flux.just(a, b, c)
+                .transform(TimeBarriers::ENTER_VIRTUAL_TIME)
+                .transform(it -> TimeBarriers.EXIT_VIRTUAL_TIME(it, Instant.ofEpochMilli(-1)));
+
+        StepVerifier.create(flux)
+                .expectSubscription()
+                .expectError(UnsupportedTimeException.class)
+                .verify();
+    }
+
+    @Test//(timeOut = DEFAULT_TEST_TIMEOUT)
+    void nonMonotonicStartTimeShouldFail() {
+        final Flux<String> flux = Flux.just(a, b, c)
+                .transform(TimeBarriers::ENTER_VIRTUAL_TIME)
+                .transform(it -> TimeBarriers.EXIT_VIRTUAL_TIME(it, Instant.ofEpochSecond(3)));
+
+        StepVerifier.create(flux)
+                .expectSubscription()
+                .expectError(UnreachableTimeException.class)
+                .verify();
+    }
+
+    @Test//(timeOut = DEFAULT_TEST_TIMEOUT)
+    void unsupportedStopTimeShouldFail() {
+        final Flux<String> flux = Flux.just(a, b, c)
+                .transform(it -> TimeBarriers.ENTER_VIRTUAL_TIME(it, Instant.ofEpochMilli(-1)))
+                .transform(TimeBarriers::EXIT_VIRTUAL_TIME);
+
+        StepVerifier.create(flux)
+                .expectSubscription()
+                .expectNext("a")
+                .expectNext("b")
+                .expectNext("c")
+                .expectError(UnsupportedTimeException.class)
+                .verify();
+    }
+
+    @Test//(timeOut = DEFAULT_TEST_TIMEOUT)
+    void nonMonotonicStopTimeShouldFail1() {
+        final Flux<String> flux = Flux.just(a, b, c)
+                .transform(it -> TimeBarriers.ENTER_VIRTUAL_TIME(it, Instant.ofEpochSecond(2)))
+                .transform(TimeBarriers::EXIT_VIRTUAL_TIME);
+
+        StepVerifier.create(flux)
+                .expectSubscription()
+                .expectNext("a")
+                .expectNext("b")
+                .expectNext("c")
+                .expectError(UnreachableTimeException.class)
+                .verify();
+    }
+
+    @Test//(timeOut = DEFAULT_TEST_TIMEOUT)
+    void nonMonotonicStopTimeShouldFail2() {
+        final Flux<String> flux = Flux.just(a, b, c)
+                .transform(it -> TimeBarriers.ENTER_VIRTUAL_TIME(it, instant -> instant.minusMillis(1)))
+                .transform(TimeBarriers::EXIT_VIRTUAL_TIME);
+
+        StepVerifier.create(flux)
+                .expectSubscription()
+                .expectNext("a")
+                .expectNext("b")
+                .expectNext("c")
+                .expectError(UnreachableTimeException.class)
+                .verify();
+    }
+
+    @Test//(timeOut = DEFAULT_TEST_TIMEOUT)
+    void nonMonotonicStopTimeAccumulator1() {
+        final Flux<String> flux = Flux.just(a, b, c)
+                .transform(it -> TimeBarriers.ENTER_VIRTUAL_TIME(it,
+                        () -> Instant.ofEpochSecond(0),
+                        (timeAcc, element) -> element.getT1(),
+                        lastTime -> lastTime
+                        )).transform(TimeBarriers::EXIT_VIRTUAL_TIME);
+
+        StepVerifier.create(flux)
+                .expectSubscription()
+                .expectNext("a")
+                .expectNext("b")
+                .expectNext("c")
+                .verifyComplete();
+    }
+
+    @Test//(timeOut = DEFAULT_TEST_TIMEOUT)
+    void nonMonotonicStopTimeAccumulator2() {
+        final Flux<String> flux = Flux.just(a, b, c)
+                .transform(it -> TimeBarriers.ENTER_VIRTUAL_TIME(it,
+                        () -> "",
+                        (acc, next) -> acc.concat(next.getT2()),
+                        combinedLetters -> Instant.ofEpochSecond(combinedLetters.length() * 2)
+                )).transform(TimeBarriers::EXIT_VIRTUAL_TIME);
+
+        StepVerifier.create(flux)
+                .expectSubscription()
+                .expectNext("a")
+                .expectNext("b")
+                .expectNext("c")
+                .verifyComplete();
+    }
+
+    @Test//(timeOut = DEFAULT_TEST_TIMEOUT)
+    void nonMonotonicStopTimeAccumulator3() {
+        //  this just sums all times, so it will "overshoot" the "natural" end time of 6sec with 2+4+6 = 12sec
+        final Flux<String> flux = Flux.just(a, b, c)
+                .transform(it -> TimeBarriers.ENTER_VIRTUAL_TIME(it,
+                        () -> Instant.ofEpochMilli(0),
+                        (acc, next) -> acc.plusMillis(next.getT1().toEpochMilli()),
+                        instant -> instant
+                )).transform(TimeBarriers::EXIT_VIRTUAL_TIME);
+
+        StepVerifier.create(flux)
+                .expectSubscription()
+                .expectNext("a")
+                .expectNext("b")
+                .expectNext("c")
+                .verifyComplete();
+    }
+
+    @Test//(timeOut = DEFAULT_TEST_TIMEOUT)
+    void nonMonotonicStopTimeAccumulator4() {
+        // only track half the time passed should result in an error (trying to go backwards in time)
+        final Flux<String> flux = Flux.just(a, b, c)
+                .transform(it -> TimeBarriers.ENTER_VIRTUAL_TIME(it,
+                        () -> 0L,
+                        (acc, next) -> next.getT1().toEpochMilli() / 2L,
+                        Instant::ofEpochMilli
+                )).transform(TimeBarriers::EXIT_VIRTUAL_TIME);
+
+        StepVerifier.create(flux)
+                .expectSubscription()
+                .expectNext("a")
+                .expectNext("b")
+                .expectNext("c")
+                .expectError(UnreachableTimeException.class)
+                .verify();
+    }
+
     // checks for incorrect use of barriers
 
     @Test//(timeOut = DEFAULT_TEST_TIMEOUT)
     void fluxMissingTimeBarrierBeginTest1() {
         final Flux<Tuple2<Long, String>> flux = Flux.just(a, b, c, d, e, f)
-                .transform(TimeBarriers::NOT_VIRTUAL_HINT)
+                .transform(TimeBarriers::ATTACH_NOT_VIRTUAL_HINT)
                 .transform(TimeBarriers::EXIT_VIRTUAL_TIME);
 
         StepVerifier.create(flux)
                 .expectSubscription()
-                .expectError(InstrumentationAssemblyException.class)
+                .expectError(BarrierAssemblyException.class)
                 .verify();
     }
 
     @Test//(timeOut = DEFAULT_TEST_TIMEOUT)
     void fluxMissingTimeBarrierBeginTest2() {
         final Flux<Tuple2<Long, String>> flux = Flux.just(a, b, c, d, e, f)
-                .transform(TimeBarriers::NOT_VIRTUAL_HINT)
+                .transform(TimeBarriers::ATTACH_NOT_VIRTUAL_HINT)
                 .delayElements(Duration.ofSeconds(4))
                 .transform(TimeBarriers::EXIT_VIRTUAL_TIME);
 
         StepVerifier.create(flux)
                 .expectSubscription()
-                .expectError(InstrumentationAssemblyException.class)
+                .expectError(BarrierAssemblyException.class)
                 .verify();
     }
 
@@ -147,30 +309,30 @@ public class TimeBarriersTest {
     void fluxMissingTimeBarrierBeginNestedTest() {
         final Flux<String> flux = Flux.just(a, b, c, d, e, f)
                 .transform(TimeBarriers::ENTER_VIRTUAL_TIME)
-                .transform(TimeBarriers::NOT_VIRTUAL_HINT)
+                .transform(TimeBarriers::ATTACH_NOT_VIRTUAL_HINT)
                 .transform(TimeBarriers::EXIT_VIRTUAL_TIME);
 
         StepVerifier.create(flux)
                 .expectSubscription()
-                .expectError(InstrumentationAssemblyException.class)
+                .expectError(BarrierAssemblyException.class)
                 .verify();
 
         final Flux<String> unmatchedNested = Flux.just(a, b, c, d, e, f)
                 .transform(TimeBarriers::ENTER_VIRTUAL_TIME)
                 .flatMapSequential(letter -> Flux.just(letter, letter)
-                        .transform(TimeBarriers::NOT_VIRTUAL_HINT)
+                        .transform(TimeBarriers::ATTACH_NOT_VIRTUAL_HINT)
                         .transform(TimeBarriers::EXIT_VIRTUAL_TIME))
                 .transform(TimeBarriers::EXIT_VIRTUAL_TIME);
 
         final Flux<String> nestedHint = Flux.just(a, b, c, d, e, f)
                 .transform(TimeBarriers::ENTER_VIRTUAL_TIME)
                 .flatMapSequential(letter -> Flux.just(letter, letter)
-                        .transform(TimeBarriers::NOT_VIRTUAL_HINT))
+                        .transform(TimeBarriers::ATTACH_NOT_VIRTUAL_HINT))
                 .transform(TimeBarriers::EXIT_VIRTUAL_TIME);
 
         StepVerifier.create(unmatchedNested, opts().scenarioName("Unmatched inner should fail at runtime"))
                 .expectSubscription()
-                .expectError(InstrumentationAssemblyException.class)
+                .expectError(BarrierAssemblyException.class)
                 .verify();
 
         StepVerifier.create(nestedHint, opts().scenarioName("Non-virtual inner hint should pass"))
@@ -186,7 +348,20 @@ public class TimeBarriersTest {
 
         StepVerifier.create(matchedToInner)
                 .expectSubscription()
-                .expectError(InstrumentationSubscriptionException.class)
+                .expectError(BarrierSubscriptionException.class)
+                .verify();
+    }
+
+    @Test//(timeOut = DEFAULT_TEST_TIMEOUT)
+    void fluxTimeBasedOnBackpressureBufferUnsupported() {
+        final Flux<String> matchedToInner = Flux.just(a, b, c, d, e, f)
+                .transform(TimeBarriers::ENTER_VIRTUAL_TIME)
+                .onBackpressureBuffer(Duration.ofSeconds(1), 6, s -> {})
+                .transform(TimeBarriers::EXIT_VIRTUAL_TIME);
+
+        StepVerifier.create(matchedToInner)
+                .expectSubscription()
+                .expectError(AssemblyInstrumentationException.class)
                 .verify();
     }
 
@@ -200,32 +375,32 @@ public class TimeBarriersTest {
 
         StepVerifier.create(matchedToInner)
                 .expectSubscription()
-                .expectError(InstrumentationSubscriptionException.class)
+                .expectError(BarrierSubscriptionException.class)
                 .verify();
     }
 
     @Test
     void monoMissingTimeBarrierBeginTest1() {
         final Mono<Tuple2<Long, String>> mono = Mono.just(a)
-                .transform(TimeBarriers::NOT_VIRTUAL_HINT)
+                .transform(TimeBarriers::ATTACH_NOT_VIRTUAL_HINT)
                 .transform(TimeBarriers::EXIT_VIRTUAL_TIME);
 
         StepVerifier.create(mono)
                 .expectSubscription()
-                .expectError(InstrumentationAssemblyException.class)
+                .expectError(BarrierAssemblyException.class)
                 .verify();
     }
 
     @Test
     void monoMissingTimeBarrierBeginTest2() {
         final Mono<Tuple2<Long, String>> mono = Mono.just(a)
-                .transform(TimeBarriers::NOT_VIRTUAL_HINT)
+                .transform(TimeBarriers::ATTACH_NOT_VIRTUAL_HINT)
                 .delayElement(Duration.ofSeconds(4))
                 .transform(TimeBarriers::EXIT_VIRTUAL_TIME);
 
         StepVerifier.create(mono)
                 .expectSubscription()
-                .expectError(InstrumentationAssemblyException.class)
+                .expectError(BarrierAssemblyException.class)
                 .verify();
     }
 
@@ -233,7 +408,7 @@ public class TimeBarriersTest {
     void monoMissingTimeBarrierBeginIsAHeuristicTest() {
 
         // test behavior where no instrumentation hint makes catching malformed Flux/Mono's impossible
-        // luckily the change in types makes this hard to accidently do
+        // luckily the change in types makes this hard to accidentally do
 
         // should fail...
         final Mono<String> mono = Mono.just("a").transform(TimeBarriers::EXIT_VIRTUAL_TIME);
@@ -243,36 +418,39 @@ public class TimeBarriersTest {
                 .expectSubscription()
                 .expectNext("a")
                 .verifyComplete();
+
+        // to see the same behavior with an event throw a SubscriptionInstrumentationException,
+        // see the TimeBarriersTest#monoMissingTimeBarrierEndTest test
     }
 
     @Test
     void monoMissingTimeBarrierBeginNestedTest() {
         final Mono<String> intermediateHint = Mono.just(a)
                 .transform(TimeBarriers::ENTER_VIRTUAL_TIME)
-                .transform(TimeBarriers::NOT_VIRTUAL_HINT)
+                .transform(TimeBarriers::ATTACH_NOT_VIRTUAL_HINT)
                 .transform(TimeBarriers::EXIT_VIRTUAL_TIME);
 
         StepVerifier.create(intermediateHint)
                 .expectSubscription()
-                .expectError(InstrumentationAssemblyException.class)
+                .expectError(BarrierAssemblyException.class)
                 .verify();
 
         final Mono<String> unmatchedNested = Mono.just(a)
                 .transform(TimeBarriers::ENTER_VIRTUAL_TIME)
                 .flatMap(letter -> Mono.just(letter)
-                        .transform(TimeBarriers::NOT_VIRTUAL_HINT)
+                        .transform(TimeBarriers::ATTACH_NOT_VIRTUAL_HINT)
                         .transform(TimeBarriers::EXIT_VIRTUAL_TIME))
                 .transform(TimeBarriers::EXIT_VIRTUAL_TIME);
 
         final Mono<String> nestedHint = Mono.just(a)
                 .transform(TimeBarriers::ENTER_VIRTUAL_TIME)
                 .flatMap(letter -> Mono.just(letter)
-                        .transform(TimeBarriers::NOT_VIRTUAL_HINT))
+                        .transform(TimeBarriers::ATTACH_NOT_VIRTUAL_HINT))
                 .transform(TimeBarriers::EXIT_VIRTUAL_TIME);
 
         StepVerifier.create(unmatchedNested, opts().scenarioName("Unmatched inner should fail at runtime"))
                 .expectSubscription()
-                .expectError(InstrumentationAssemblyException.class)
+                .expectError(BarrierAssemblyException.class)
                 .verify();
 
         StepVerifier.create(nestedHint, opts().scenarioName("Non-virtual inner hint should pass"))
@@ -288,7 +466,7 @@ public class TimeBarriersTest {
 
         StepVerifier.create(matchedToInner)
                 .expectSubscription()
-                .expectError(InstrumentationSubscriptionException.class)
+                .expectError(BarrierSubscriptionException.class)
                 .verify();
     }
 
@@ -302,7 +480,7 @@ public class TimeBarriersTest {
 
         StepVerifier.create(matchedToInner)
                 .expectSubscription()
-                .expectError(InstrumentationSubscriptionException.class)
+                .expectError(BarrierSubscriptionException.class)
                 .verify();
     }
 
@@ -668,6 +846,61 @@ public class TimeBarriersTest {
                 .expectSubscription()
                 .expectNext(2L, 4L, 6L, 8L, 10L)
                 .verifyComplete();
+    }
+
+    @Test
+    public void outOfOrderMergeTest() {
+        final Flux<Tuple2<Long,String>> flux = Flux.merge(Flux.just(a, c, e), Flux.just(b, d, f))
+                .transform(TimeBarriers::ENTER_VIRTUAL_TIME)
+                .delaySequence(Duration.ofSeconds(1))
+                .timestamp()
+                .transform(TimeBarriers::EXIT_VIRTUAL_TIME);
+
+        StepVerifier.create(flux)
+                .expectSubscription()
+                .expectNext(tuple(3000L, "a"))
+                .expectNext(tuple(7000L, "c"))
+                .expectNext(tuple(11000L, "e"))
+                .expectError(UnreachableTimeException.class)
+                .verify();
+    }
+
+    @Test
+    public void parallelSchedulersTest() throws InterruptedException, TimeoutException, ExecutionException {
+        Schedulers.resetFactory();
+
+        final Flux<Tuple2<Long, String>> flux = Flux.just(a, b, c, d, e, f)
+                .publishOn(Schedulers.parallel())
+                .transform(TimeBarriers::ENTER_VIRTUAL_TIME)
+                .delaySequence(Duration.ofSeconds(3))
+                .timestamp()
+                .transform(TimeBarriers::EXIT_VIRTUAL_TIME);
+
+        final int numSubscribers = 500;
+        final int poolSize = Math.min(numSubscribers, Schedulers.DEFAULT_POOL_SIZE);
+        final ExecutorService executorService = Executors.newFixedThreadPool(poolSize);
+
+        final Callable<?> verifier = () -> {
+            StepVerifier.create(flux)
+                    .expectSubscription()
+                    .expectNext(tuple(5000L, "a"))
+                    .expectNext(tuple(7000L, "b"))
+                    .expectNext(tuple(9000L, "c"))
+                    .expectNext(tuple(11000L, "d"))
+                    .expectNext(tuple(13000L, "e"))
+                    .expectNext(tuple(15000L, "f"))
+                    .verifyComplete();
+            return null;
+        };
+
+        final List<? extends Future<?>> tasks = executorService.invokeAll(nCopies(numSubscribers, verifier));
+
+        Thread.sleep(20L);
+
+        for (Future<?> task : tasks) {
+            // will throw any exceptions that occurred in the Callable
+            task.get(10, TimeUnit.SECONDS);
+        }
     }
 
 }

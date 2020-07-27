@@ -17,6 +17,7 @@
 package org.sireum.hooks;
 
 import org.jetbrains.annotations.NotNull;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Operators;
@@ -24,12 +25,35 @@ import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
 import java.time.Duration;
+import java.time.Instant;
 
 /**
  * A public API with utility methods to support use of the core {@link TimeBarriers} API.
  */
 public final class TimeUtils {
 
+    /**
+     * This is a utility class and cannot be instantiated.
+     */
+    private TimeUtils() {
+        throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
+    }
+
+    /**
+     * Returns a {@link Flux} of "(long,long)" {@link Tuple2}s which can be brought into virtual time
+     * (for example using {@link TimeBarriers#ENTER_VIRTUAL_TIME(Flux)}) to simulate {@link Flux#interval(Duration)}.
+     * <br>
+     * This is useful because while {@link Flux#interval(Duration)} is capable of virtual time, it needs
+     * to be created within a virtual segment and (likely) have its elements merged into the stream before its
+     * completion. This can be counterintuitive for operators such as {@link Flux#thenMany(Publisher)} trigger following
+     * onComplete. Also, {@link Flux#interval(Duration)} is
+     *
+     * todo confirm all claims above
+     * todo check that interval is hot flux (vs "cold" / "as needed" intervalTuples generator). If as needed, what if the request is unbounded??
+     *
+     * @param period
+     * @return
+     */
     @NotNull
     public static Flux<Tuple2<Long, Long>> intervalTuples(@NotNull Duration period) {
         return intervalTuples(period, period);
@@ -72,9 +96,5 @@ public final class TimeUtils {
         if (n < 0L) {
             throw new IllegalArgumentException(variableName + " >= 0 required but it was " + n);
         }
-    }
-
-    private TimeUtils() {
-        throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
     }
 }

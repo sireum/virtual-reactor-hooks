@@ -24,17 +24,27 @@ import java.util.Arrays;
  * A wrapper for exceptions that occur when instrumenting a {@link reactor.core.publisher.Flux},
  * {@link reactor.core.publisher.Mono}, {@link reactor.core.publisher.ConnectableFlux}, or any other
  * {@link reactor.core.CorePublisher} at assembly time.
+ * <br>
+ * Warning: this class uses reflection to create its detailed error message.
  */
-public class InstrumentationAssemblyException extends RuntimeException {
+public class AssemblyInstrumentationException extends RuntimeException {
 
-    InstrumentationAssemblyException(String message) {
-        super(message);
-    }
-
-    InstrumentationAssemblyException(ProceedingJoinPoint joinPoint, Throwable cause) {
+    /**
+     * Indicates an exception occurred when assembling an instrumented operator.
+     *
+     * @param joinPoint whose {@link ProceedingJoinPoint#proceed()} call threw the error
+     * @param cause the error to wrap alongside the additional information
+     */
+    AssemblyInstrumentationException(ProceedingJoinPoint joinPoint, Throwable cause) {
         super(createErrorMessage(joinPoint), cause);
     }
 
+    /**
+     * Uses reflection to detailed error message from the {@link ProceedingJoinPoint}.
+     *
+     * @param joinPoint to evaluate
+     * @return a detailed error message about the joinPoint
+     */
     private static String createErrorMessage(ProceedingJoinPoint joinPoint) {
         return "A fatal exception occurred around an instrumentation join point. " +
                 "\n(Note: the exception's stack trace will be printed below.)" +

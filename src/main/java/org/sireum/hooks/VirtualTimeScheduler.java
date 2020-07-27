@@ -11,6 +11,11 @@
  * 		- Removed the if (!defer || !queue.isEmpty()) { ... } check because !defer was always true
  * 	 (3) Reduced class visibility from public to package-private.
  * 		- Also adjusted constructors/factory methods to match.
+ *   (4) Changed "advanceTimeTo(Instant)" method to only advance if currentTime <= newTime
+ *      - return signature changed from void to boolean (true if time was advanced)
+ *   (5) Deleted "advanceTimeBy(Duration)" method
+ *   (6) Deleted "advanceTime()" method
+ *   (7) Automatic import cleanup was run after making these changes
  *
  */
 /*
@@ -39,7 +44,6 @@ import reactor.core.scheduler.Scheduler;
 import reactor.util.annotation.Nullable;
 import reactor.util.concurrent.Queues;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Queue;
 import java.util.concurrent.PriorityBlockingQueue;
@@ -48,6 +52,10 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * Modified version of Reactor's VirtualTimeScheduler for internal library use.
+ * See the modifications copyright at the top of this source file for a list of changes.
+ */
 class VirtualTimeScheduler implements Scheduler {
 
 	static VirtualTimeScheduler create() {
@@ -78,32 +86,21 @@ class VirtualTimeScheduler implements Scheduler {
 	}
 
 	/**
-	 * Triggers any tasks that have not yet been executed and that are scheduled to be
-	 * executed at or before this {@link VirtualTimeScheduler}'s present time.
-	 */
-	public void advanceTime() {
-		advanceTimeBy(Duration.ZERO);
-	}
-
-	/**
-	 * Moves the {@link VirtualTimeScheduler}'s clock forward by a specified amount of time.
-	 *
-	 * @param delayTime the amount of time to move the {@link VirtualTimeScheduler}'s clock forward
-	 */
-	public void advanceTimeBy(Duration delayTime) {
-		advanceTime(delayTime.toNanos());
-	}
-
-	/**
 	 * Moves the {@link VirtualTimeScheduler}'s clock to a particular moment in time.
 	 *
 	 * @param instant the point in time to move the {@link VirtualTimeScheduler}'s
 	 * clock to
 	 */
-	public void advanceTimeTo(Instant instant) {
-		long targetTime = TimeUnit.NANOSECONDS.convert(instant.toEpochMilli(),
-				TimeUnit.MILLISECONDS);
-		advanceTime(targetTime - nanoTime);
+	public boolean advanceTimeTo(Instant instant) {
+		final long targetTime = TimeUnit.NANOSECONDS.convert(instant.toEpochMilli(), TimeUnit.MILLISECONDS);
+        final long timeShiftInNanoseconds = targetTime - nanoTime;
+
+        if (timeShiftInNanoseconds < 0L) {
+        	return false;
+		}
+
+		advanceTime(timeShiftInNanoseconds);
+		return true;
 	}
 
 	/**
