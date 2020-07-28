@@ -35,7 +35,7 @@ import static org.sireum.hooks.TimeBarriers.noInstrumentation;
 
 /**
  * Contains {@link Aspect}s with advice wrapping time-sensitive operations. Neither this class nor its inner
- * {@link Aspect}s should be directly.
+ * {@link Aspect}s should be used directly.
  */
 public class ReactorAdvice {
 

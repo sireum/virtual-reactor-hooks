@@ -101,4 +101,5 @@ Licensed under [Apache Software License 2.0](www.apache.org/licenses/LICENSE-2.0
 This project redistributes a modified version of the 
 [reactor-core](https://github.com/reactor/reactor-core/blob/master/README.md) library that has been (post-compile)
 bytecode weaved to support virtual time. The reactor-core sources are also redistributed with 
-a modification notice to make them visually distinct and compliant with reactor's Apache 2.0 license.
+a modification notice to make them (1) noticeably distinct to benefit users and (2) compliant with reactor's Apache 
+2.0 license.

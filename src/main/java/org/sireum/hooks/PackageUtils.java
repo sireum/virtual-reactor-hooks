@@ -175,4 +175,14 @@ final class PackageUtils {
             }
         });
     }
+
+    /**
+     * Returns whether or not the given instant can be handled by the virtual time scheduler.
+     *
+     * @param instant the {@link Instant} to be validated
+     * @return true iff the given {@link Instant} is supported in virtual time
+     */
+    static boolean validate(@NotNull Instant instant) {
+        return !instant.isBefore(MIN_EPOCH) && !instant.isAfter(MAX_EPOCH);
+    }
 }

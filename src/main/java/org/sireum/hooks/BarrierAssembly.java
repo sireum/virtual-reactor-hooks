@@ -138,10 +138,6 @@ final class BarrierAssembly {
         return MonoAssembly.end(source, startTime);
     }
 
-    private static boolean validate(Instant instant) {
-        return !instant.isBefore(PackageUtils.MIN_EPOCH) && !instant.isAfter(PackageUtils.MAX_EPOCH);
-    }
-
     private abstract static class FluxAssembly<T> extends Flux<Tuple2<Long,T>> {
 
         /**
@@ -350,7 +346,7 @@ final class BarrierAssembly {
 
                 final Instant stopTime = extractor.apply(acc);
 
-                if (!validate(stopTime)) {
+                if (!PackageUtils.validate(stopTime)) {
                     final UnsupportedTimeException cause = new UnsupportedTimeException(stopTime,
                             "when advancing scheduler clock to stopTime during BeginVirtualTime's onComplete");
                     // call actual's onError (not ours) because done has already been set to true
@@ -422,13 +418,13 @@ final class BarrierAssembly {
             this.actual = actual;
             this.scheduler = VirtualTimeScheduler.create();
 
-            if (validate(startTime)) {
-                // recall this is called in outer operator's onSubscribe
+            if (PackageUtils.validate(startTime)) {
+                // recall this method is called in outer operator's onSubscribe
                 scheduler.advanceTimeTo(startTime);
                 this.context = actual.currentContext().putAll(Context.of(PackageUtils.SCHEDULER_CONTEXT_KEY, scheduler));
             } else {
                 // if invalid, add the offending startTime to the context so it can be used in the
-                // error-message-emitting operator that will instead be subscribed to by onSubscribe
+                // error-message-emitting operator (then) supplicant realized by the downstream during onSubscribe
                 this.context = actual.currentContext().putAll(Context.of(PackageUtils.SCHEDULER_CONTEXT_KEY, scheduler, Instant.class, startTime));
             }
         }

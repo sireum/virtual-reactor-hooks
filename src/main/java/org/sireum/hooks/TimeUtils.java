@@ -17,7 +17,6 @@
 package org.sireum.hooks;
 
 import org.jetbrains.annotations.NotNull;
-import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Operators;
@@ -40,32 +39,28 @@ public final class TimeUtils {
     }
 
     /**
-     * Returns a {@link Flux} of "(long,long)" {@link Tuple2}s which can be brought into virtual time
-     * (for example using {@link TimeBarriers#ENTER_VIRTUAL_TIME(Flux)}) to simulate {@link Flux#interval(Duration)}.
-     * <br>
-     * This is useful because while {@link Flux#interval(Duration)} is capable of virtual time, it needs
-     * to be created within a virtual segment and (likely) have its elements merged into the stream before its
-     * completion. This can be counterintuitive for operators such as {@link Flux#thenMany(Publisher)} trigger following
-     * onComplete. Also, {@link Flux#interval(Duration)} is
+     * Returns a {@link Flux} of tuples which can be used emulate {@link Flux#interval(Duration)} in virtual time.
      *
-     * todo confirm all claims above
-     * todo check that interval is hot flux (vs "cold" / "as needed" intervalTuples generator). If as needed, what if the request is unbounded??
-     *
-     * @param period
-     * @return
+     * @param period the period {@link Duration} between each increment
+     * @return a cold {@link Flux} emitting increasing numbers at regular intervals
      */
     @NotNull
     public static Flux<Tuple2<Long, Long>> intervalTuples(@NotNull Duration period) {
         return intervalTuples(period, period);
     }
 
+    /**
+     * Returns a {@link Flux} of tuples which can be used emulate {@link Flux#interval(Duration, Duration)} in virtual
+     * time.
+     *
+     * @param delay  the {@link Duration} to wait before emitting 0L
+     * @param period the period {@link Duration} before each following increment
+     * @return a {@link Flux} emitting increasing numbers which are timestamped at regular intervals
+     */
     @NotNull
     public static Flux<Tuple2<Long, Long>> intervalTuples(@NotNull Duration delay, @NotNull Duration period) {
         final long delayMS = delay.toMillis();
         final long periodMS = period.toMillis();
-
-        assertNonNegative(delayMS, "delayMS");
-        assertNonNegative(periodMS, "periodMS");
 
         return Flux.generate(() -> 0L, (index, sink) -> {
             final long adjustedMS = Operators.addCap(delayMS, Operators.multiplyCap(periodMS, index));
@@ -80,21 +75,47 @@ public final class TimeUtils {
         });
     }
 
+    /**
+     * Returns a {@link Mono} containing a tuple which can be used emulate {@link Mono#delay(Duration)} in virtual time.
+     *
+     * @param duration the duration of the delay
+     * @return a {@link Mono} that emits a tuple of ("duration's timestamp", 0L)
+     */
     @NotNull
     public static Mono<Tuple2<Long,Long>> delayTuple(@NotNull Duration duration) {
         final long delayMS = duration.toMillis();
-        assertNonNegative(delayMS, "delayMS");
         return Mono.just(attachTimestamp(delayMS, 0L));
     }
 
+    /**
+     * Convenience function to attach a timestamp to a value. This is the same as {@code Tuples.of(timestamp, value)},
+     * but with the additional benefit of validating the timestamps.
+     *
+     * @param timestamp the timestamp's millisecond representation
+     * @param value the value to be associated with a timestamp
+     * @param <T> the type of the input value
+     * @return a {@link Tuple2} containing ({@link Long} timestamp, T value)
+     * @throws UnsupportedTimeException if the timestamp is outside the supported range
+     */
     @NotNull
     public static <T> Tuple2<Long,T> attachTimestamp(long timestamp, @NotNull T value) {
-        return Tuples.of(timestamp, value);
+        return attachTimestamp(Instant.ofEpochMilli(timestamp), value);
     }
 
-    private static void assertNonNegative(long n, @NotNull String variableName) {
-        if (n < 0L) {
-            throw new IllegalArgumentException(variableName + " >= 0 required but it was " + n);
-        }
+    /**
+     * Convenience function to attach a timestamp to a value. This is the same as {@code Tuples.of(timestamp, value)},
+     * but with the additional benefit of validating the timestamps.
+     *
+     * @param timestamp the {@link Instant} of this timestamp
+     * @param value the value to be associated with a timestamp
+     * @param <T> the type of the input value
+     * @return a {@link Tuple2} containing ({@link Long} timestamp, T value)
+     * @throws UnsupportedTimeException if the timestamp is outside the supported range
+     */
+    @NotNull
+    public static <T> Tuple2<Long,T> attachTimestamp(@NotNull Instant timestamp, @NotNull T value) {
+        PackageUtils.validate(timestamp);
+        return Tuples.of(timestamp.toEpochMilli(), value);
     }
+
 }
