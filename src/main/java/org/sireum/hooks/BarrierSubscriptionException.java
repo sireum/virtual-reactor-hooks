@@ -18,8 +18,6 @@ package org.sireum.hooks;
 
 import reactor.core.publisher.Flux;
 
-import java.time.Instant;
-
 /**
  * A wrapper for exceptions that occur within a {@link TimeBarriers} operator at subscription time. This will typically
  * occur when a BEGIN_VIRTUAL_TIME operator cannot detect a downstream END_VIRTUAL_TIME operator.

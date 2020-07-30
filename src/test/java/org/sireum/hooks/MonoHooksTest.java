@@ -18,13 +18,15 @@ package org.sireum.hooks;
 
 import org.sireum.hooks.ErrorSchedulerFactory.SchedulerCreationException;
 import org.testng.Assert;
-import org.testng.annotations.*;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Ignore;
+import org.testng.annotations.Test;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 import reactor.test.publisher.PublisherProbe;
 import reactor.test.scheduler.VirtualTimeScheduler;
-
 import reactor.util.function.Tuple2;
 import reactor.util.retry.Retry;
 
@@ -33,7 +35,8 @@ import java.util.List;
 import java.util.concurrent.*;
 
 import static java.util.Collections.nCopies;
-import static org.sireum.hooks.TestConstants.*;
+import static org.sireum.hooks.TestConstants.a;
+import static org.sireum.hooks.TestConstants.tuple;
 
 public class MonoHooksTest {
 

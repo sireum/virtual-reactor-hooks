@@ -423,8 +423,8 @@ final class BarrierAssembly {
                 scheduler.advanceTimeTo(startTime);
                 this.context = actual.currentContext().putAll(Context.of(PackageUtils.SCHEDULER_CONTEXT_KEY, scheduler));
             } else {
-                // if invalid, add the offending startTime to the context so it can be used in the
-                // error-message-emitting operator (then) supplicant realized by the downstream during onSubscribe
+                // if invalid, add the offending startTime to the context so it can be used to craft an error message
+                // during onSubscribe
                 this.context = actual.currentContext().putAll(Context.of(PackageUtils.SCHEDULER_CONTEXT_KEY, scheduler, Instant.class, startTime));
             }
         }

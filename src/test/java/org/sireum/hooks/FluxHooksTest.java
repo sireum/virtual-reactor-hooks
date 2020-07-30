@@ -19,25 +19,27 @@ package org.sireum.hooks;
 import org.reactivestreams.Publisher;
 import org.sireum.hooks.ErrorSchedulerFactory.SchedulerCreationException;
 import org.testng.Assert;
-import org.testng.annotations.*;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 import reactor.test.publisher.PublisherProbe;
-
-import reactor.test.publisher.TestPublisher;
+import reactor.test.scheduler.VirtualTimeScheduler;
 import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 import reactor.util.retry.Retry;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import reactor.test.scheduler.VirtualTimeScheduler;
 
 import static java.util.Collections.nCopies;
 import static org.sireum.hooks.TestConstants.*;
@@ -136,6 +138,40 @@ public class FluxHooksTest {
                 .expectNext("timeout")
                 .expectNext("fallback")
                 .expectNext("flux")
+                .verifyComplete();
+    }
+
+    @Test//(timeOut = DEFAULT_TEST_TIMEOUT)
+    void simpleIntervalTest() {
+        Schedulers.resetFactory();
+        final Flux<Integer> flux = Flux.range(1, 10)
+                .publishOn(Schedulers.parallel())
+                .filter(n -> n % 2 == 0) // evens only
+                .map(n -> TimeUtils.attachTimestamp(Instant.ofEpochSecond(n), n))
+                .transform(TimeBarriers::ENTER_VIRTUAL_TIME)
+                .skip(Duration.ofSeconds(5))
+                .transform(TimeBarriers::EXIT_VIRTUAL_TIME);
+
+        StepVerifier.create(flux)
+                .expectSubscription()
+                .expectNext(6, 8, 10)
+                .expectComplete()
+                .verify();
+    }
+
+    @Test//(timeOut = DEFAULT_TEST_TIMEOUT)
+    void threadTest() {
+        Schedulers.resetFactory();
+
+        final Flux<String> flux = Flux.just(Tuples.of(0L, "foo"))
+                .publishOn(Schedulers.parallel())
+                .transform(TimeBarriers::ENTER_VIRTUAL_TIME)
+                .map(it -> Thread.currentThread().getName())
+                .transform(TimeBarriers::EXIT_VIRTUAL_TIME);
+
+        StepVerifier.create(flux)
+                .expectSubscription()
+                .expectNextMatches(threadName -> threadName.contains("parallel"))
                 .verifyComplete();
     }
 
@@ -1358,8 +1394,6 @@ public class FluxHooksTest {
             StepVerifier.create(probe.flux())
                     .expectSubscription()
                     .expectNext(tuple(6000L, list("a")))
-//                    .expectNext(tuple(6000L, list("b")))
-//                    .expectNext(tuple(6000L, list("c")))
                     .expectNext(tuple(6000L, list("b", "c")))
                     .expectNext(tuple(6000L, list("d", "e")))
                     .expectNext(tuple(2000L, list("f")))

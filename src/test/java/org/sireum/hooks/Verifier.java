@@ -36,8 +36,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.sireum.hooks.TestConstants.tuple;
-
 public class Verifier<T> {
 
     private final Flux<T> flux;
