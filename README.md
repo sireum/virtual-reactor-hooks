@@ -224,7 +224,7 @@ For more examples, see the tests:
 or a raw
 [VirtualTimeScheduler](https://projectreactor.io/docs/test/release/api/reactor/test/scheduler/VirtualTimeScheduler.html)
 ?**
-Some Flux/Mono operators work on a particular scheduler by default and exit virtual time. 
+Some Flux/Mono operators work on a particular scheduler by default and thus exit virtual time. 
 Even if a user manually managed a `VirtualTimeScheduler` (and always remembered to pass it to these operators), they are 
 still blocked from transforming the stream with third-party libraries or any other potentially offending code.
 Reactor's StepVerifier.withVirtualTime() fixes this issue by injecting a VirtualTimeScheduler into all Scheduler 
