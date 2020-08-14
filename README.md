@@ -270,7 +270,7 @@ Within a virtual-time section, each subscriber holds a unique virtual-time sched
 [Context](https://projectreactor.io/docs/core/release/reference/#context.api). When a time-based operator is created,
 this virtual-time-based reactor distribution will instead create and return a corresponding
 [deferWithContext](https://projectreactor.io/docs/core/release/api/reactor/core/publisher/Flux.html#deferWithContext-java.util.function.Function-)
-operator which become the user's intended time-based operator at subscription time. 
+operator which will become the user's intended time-based operator at subscription time. 
 
 With this strategy, each subscriber's unique virtual-time scheduler can be retrieved from the 
 [Context](https://projectreactor.io/docs/core/release/reference/#context.api) and used to instrument the time-based
