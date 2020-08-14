@@ -253,7 +253,6 @@ backpressure strategy. See test cases `upstreamBackpressureTest1` and `upstreamB
  [TimeBarriersTest](src/test/java/org/sireum/hooks/TimeBarriersTest.java) for an example.
 
 **How does virtual-reactor-hooks keep time-based operators on the virtual scheduler?**
-
 For any operator that has a default scheduler, reactor-virtual-hooks
 simply chooses to prefer the subscriber's virtual scheduler to the default if the call was made inside a virtual 
 section. Calls explicitly specifying the scheduler are not affected.
