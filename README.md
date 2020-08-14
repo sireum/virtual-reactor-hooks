@@ -15,20 +15,38 @@ modification notice. All redistributed reactor-core sources are prefixed with sa
 
 #### Maven
 ```maven
-<dependency>
-    <groupId>org.sireum</groupId>
-    <artifactId>virtual-reactor-hooks</artifactId>
-    <version>3.3.5.RELEASE-beta</version>
-</dependency>
+<repositories>
+    <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url>
+    </repository>
+</repositories>
+
+<dependencies>
+    <dependency>
+        <groupId>org.sireum</groupId>
+        <artifactId>virtual-reactor-hooks</artifactId>
+        <version>3.3.5.RELEASE-beta</version>
+    </dependency>
+</dependencies>
 ```
 
 #### Gradle
 ```gradle
-compile group: 'org.sireum', name: 'virtual-reactor-hooks', version: '3.3.5.RELEASE-beta'
+allprojects {
+    repositories {
+        maven { url 'https://jitpack.io' }
+    }
+}
+
+dependencies {
+    implementation 'org.sireum:virtual-reactor-hooks:3.3.5.RELEASE-beta'
+}
 ```
 
 #### Sbt
 ```sbt
+resolvers += "jitpack" at "https://jitpack.io"
 libraryDependencies += "org.sireum" % "virtual-reactor-hooks" % "3.3.5.RELEASE-beta"
 ```
 
