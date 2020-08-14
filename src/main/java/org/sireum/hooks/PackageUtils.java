@@ -17,10 +17,10 @@
 package org.sireum.hooks;
 
 import org.aspectj.lang.ProceedingJoinPoint;
-import org.jetbrains.annotations.NotNull;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
+import reactor.util.annotation.NonNull;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -70,8 +70,8 @@ final class PackageUtils {
      * @return the result of evaluating {@link ProceedingJoinPoint#proceed()} on the given joinPoint
      * @throws AssemblyInstrumentationException wrapping any thrown exceptions
      */
-    @NotNull
-    static Object proceed(@NotNull ProceedingJoinPoint joinPoint) {
+    @NonNull
+    static Object proceed(@NonNull ProceedingJoinPoint joinPoint) {
         try {
             return joinPoint.proceed();
         } catch (Throwable throwable) {
@@ -109,10 +109,10 @@ final class PackageUtils {
      * @param <T> the type of the {@link Mono}'s element value
      * @return a {@link Mono} which supplies either the user's initial or adjusted {@link Mono} at subscription-time
      */
-    @NotNull
+    @NonNull
     @SuppressWarnings("unchecked")
-    static <T> Mono<T> virtualMono(@NotNull ProceedingJoinPoint joinPoint,
-                                   @NotNull Function<? super Scheduler, ? extends Mono<T>> builder) {
+    static <T> Mono<T> virtualMono(@NonNull ProceedingJoinPoint joinPoint,
+                                   @NonNull Function<? super Scheduler, ? extends Mono<T>> builder) {
         return Mono.deferWithContext(context -> {
             final Optional<VirtualTimeScheduler> maybeScheduler = context.getOrEmpty(SCHEDULER_CONTEXT_KEY);
             if (maybeScheduler.isPresent()) {
@@ -158,7 +158,7 @@ final class PackageUtils {
      * @param <T> the type of the {@link Flux}'s element value
      * @return a {@link Flux} which supplies either the user's initial or adjusted {@link Flux} at subscription-time
      */
-    @NotNull
+    @NonNull
     @SuppressWarnings("unchecked")
     static <T> Flux<T> virtualFlux(ProceedingJoinPoint joinPoint, Function<? super Scheduler, ? extends Flux<T>> builder) {
         return Flux.deferWithContext(context -> {
@@ -182,7 +182,7 @@ final class PackageUtils {
      * @param instant the {@link Instant} to be validated
      * @return true iff the given {@link Instant} is supported in virtual time
      */
-    static boolean validate(@NotNull Instant instant) {
+    static boolean  validate(@NonNull Instant instant) {
         return !instant.isBefore(MIN_EPOCH) && !instant.isAfter(MAX_EPOCH);
     }
 }

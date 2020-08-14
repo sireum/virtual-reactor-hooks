@@ -20,6 +20,6 @@
  * There are two classes intended for direct access by the user: {@link org.sireum.hooks.TimeBarriers} (the core api)
  * and {@link org.sireum.hooks.TimeUtils} (utility functions supporting the core api). The third public class,
  * {@link org.sireum.hooks.ReactorAdvice} exists only to support the instrumented Reactor distribution, and
- * should NOT be accessed by users. All other classes are internal.
+ * should NOT be accessed by users. All other classes are either internal or public exceptions.
  */
 package org.sireum.hooks;

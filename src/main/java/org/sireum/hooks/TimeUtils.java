@@ -16,10 +16,10 @@
 
 package org.sireum.hooks;
 
-import org.jetbrains.annotations.NotNull;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Operators;
+import reactor.util.annotation.NonNull;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
@@ -44,8 +44,8 @@ public final class TimeUtils {
      * @param period the period {@link Duration} between each increment
      * @return a cold {@link Flux} emitting increasing numbers at regular intervals
      */
-    @NotNull
-    public static Flux<Tuple2<Long, Long>> intervalTuples(@NotNull Duration period) {
+    @NonNull
+    public static Flux<Tuple2<Long, Long>> intervalTuples(@NonNull Duration period) {
         return intervalTuples(period, period);
     }
 
@@ -57,8 +57,8 @@ public final class TimeUtils {
      * @param period the period {@link Duration} before each following increment
      * @return a {@link Flux} emitting increasing numbers which are timestamped at regular intervals
      */
-    @NotNull
-    public static Flux<Tuple2<Long, Long>> intervalTuples(@NotNull Duration delay, @NotNull Duration period) {
+    @NonNull
+    public static Flux<Tuple2<Long, Long>> intervalTuples(@NonNull Duration delay, @NonNull Duration period) {
         final long delayMS = delay.toMillis();
         final long periodMS = period.toMillis();
 
@@ -81,8 +81,8 @@ public final class TimeUtils {
      * @param duration the duration of the delay
      * @return a {@link Mono} that emits a tuple of ("duration's timestamp", 0L)
      */
-    @NotNull
-    public static Mono<Tuple2<Long,Long>> delayTuple(@NotNull Duration duration) {
+    @NonNull
+    public static Mono<Tuple2<Long,Long>> delayTuple(@NonNull Duration duration) {
         final long delayMS = duration.toMillis();
         return Mono.just(attachTimestamp(delayMS, 0L));
     }
@@ -97,8 +97,8 @@ public final class TimeUtils {
      * @return a {@link Tuple2} containing ({@link Long} timestamp, T value)
      * @throws UnsupportedTimeException if the timestamp is outside the supported range
      */
-    @NotNull
-    public static <T> Tuple2<Long,T> attachTimestamp(long timestamp, @NotNull T value) {
+    @NonNull
+    public static <T> Tuple2<Long,T> attachTimestamp(long timestamp, @NonNull T value) {
         return attachTimestamp(Instant.ofEpochMilli(timestamp), value);
     }
 
@@ -112,8 +112,8 @@ public final class TimeUtils {
      * @return a {@link Tuple2} containing ({@link Long} timestamp, T value)
      * @throws UnsupportedTimeException if the timestamp is outside the supported range
      */
-    @NotNull
-    public static <T> Tuple2<Long,T> attachTimestamp(@NotNull Instant timestamp, @NotNull T value) {
+    @NonNull
+    public static <T> Tuple2<Long,T> attachTimestamp(@NonNull Instant timestamp, @NonNull T value) {
         PackageUtils.validate(timestamp);
         return Tuples.of(timestamp.toEpochMilli(), value);
     }

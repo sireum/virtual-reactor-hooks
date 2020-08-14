@@ -24,6 +24,7 @@ import reactor.core.publisher.Hooks;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
+import reactor.test.publisher.TestPublisher;
 import reactor.test.scheduler.VirtualTimeScheduler;
 import reactor.util.function.Tuple2;
 
@@ -33,7 +34,7 @@ import java.util.List;
 import java.util.concurrent.*;
 
 import static java.util.Collections.nCopies;
-import static org.sireum.hooks.TestConstants.*;
+import static org.sireum.hooks.TestUtils.*;
 
 public class TimeBarriersTest {
 
@@ -46,8 +47,8 @@ public class TimeBarriersTest {
     public void beforeEach() {
         StepVerifier.setDefaultTimeout(DEFAULT_VERIFY_TIMEOUT);
         VirtualTimeScheduler.reset();
-//        ErrorSchedulerFactory.install();
-//        verifySchedulerInstallations();
+        ErrorSchedulerFactory.install();
+        verifySchedulerInstallations();
     }
 
     // checks for varying start time values and strategies
@@ -109,7 +110,7 @@ public class TimeBarriersTest {
                 .transform(it -> TimeBarriers.ENTER_VIRTUAL_TIME(it, stopTime -> stopTime.plusMillis(stopTimeDeltaMs)))
                 .take(4)
                 .timestamp()
-                .transform(it -> TimeBarriers.EXIT_VIRTUAL_TIME(it, Instant.ofEpochMilli(startTimeAbsoluteMs)));
+                .transform(it -> TimeBarriers.EXIT_VIRTUAL_TIME(it, () -> Instant.ofEpochMilli(startTimeAbsoluteMs)));
 
         StepVerifier.create(flux)
                 .expectNext(tuple(5000L, 4L))
@@ -275,6 +276,7 @@ public class TimeBarriersTest {
 
     @Test//(timeOut = DEFAULT_TEST_TIMEOUT)
     void fluxMissingTimeBarrierBeginTest2() {
+        Schedulers.resetFactory();
         final Flux<Tuple2<Long, String>> flux = Flux.just(a, b, c, d, e, f)
                 .transform(TimeBarriers::ATTACH_NOT_VIRTUAL_HINT)
                 .delayElements(Duration.ofSeconds(4))
@@ -393,6 +395,7 @@ public class TimeBarriersTest {
 
     @Test
     void monoMissingTimeBarrierBeginTest2() {
+        Schedulers.resetFactory();
         final Mono<Tuple2<Long, String>> mono = Mono.just(a)
                 .transform(TimeBarriers::ATTACH_NOT_VIRTUAL_HINT)
                 .delayElement(Duration.ofSeconds(4))
@@ -862,6 +865,49 @@ public class TimeBarriersTest {
                 .expectNext(tuple(7000L, "c"))
                 .expectNext(tuple(11000L, "e"))
                 .expectError(UnreachableTimeException.class)
+                .verify();
+    }
+
+    @Test
+    public void upstreamBackpressureTest1() {
+        final TestPublisher<Tuple2<Long,String>> testPub = TestPublisher.create();
+
+        final Flux<Tuple2<Long,String>> flux = testPub.flux()
+                .onBackpressureBuffer()
+                .transform(TimeBarriers::ENTER_VIRTUAL_TIME)
+                .timestamp()
+                .transform(TimeBarriers::EXIT_VIRTUAL_TIME);
+
+        StepVerifier.create(flux, 0)
+                .expectSubscription()
+                .thenRequest(1)
+                .then(() -> testPub.next(a, b, c))
+                .expectNext(tuple(2000L, "a"))
+                .thenAwait()
+                .thenRequest(2)
+                .expectNext(tuple(4000L, "b"))
+                .expectNext(tuple(6000L, "c"))
+                .then(testPub::complete)
+                .verifyComplete();
+    }
+
+    @Test
+    public void upstreamBackpressureTest2() {
+        final TestPublisher<Tuple2<Long,String>> testPub = TestPublisher.create();
+
+        final Flux<Tuple2<Long,String>> flux = testPub.flux()
+                .transform(TimeBarriers::ENTER_VIRTUAL_TIME)
+                .timestamp()
+                .transform(TimeBarriers::EXIT_VIRTUAL_TIME);
+
+        StepVerifier.create(flux, 0)
+                .expectSubscription()
+                .thenRequest(1)
+                .then(() -> testPub.next(a, b, c))
+                .expectNext(tuple(2000L, "a"))
+                .thenAwait()
+                .thenRequest(2)
+                .expectError(IllegalStateException.class)
                 .verify();
     }
 

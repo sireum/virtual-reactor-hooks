@@ -17,7 +17,6 @@
 package org.sireum.hooks;
 
 import org.reactivestreams.Publisher;
-import org.sireum.hooks.ErrorSchedulerFactory.SchedulerCreationException;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -42,7 +41,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static java.util.Collections.nCopies;
-import static org.sireum.hooks.TestConstants.*;
+import static org.sireum.hooks.TestUtils.*;
 
 public class FluxHooksTest {
 
@@ -1265,8 +1264,6 @@ public class FluxHooksTest {
                 .verifyComplete();
     }
 
-    // todo interval test
-
     @Test//(timeOut = DEFAULT_TEST_TIMEOUT)
     void skipBehaviorTest_OneSkip() {
 
@@ -1664,17 +1661,6 @@ public class FluxHooksTest {
         // install a VirtualTimeScheduler
         // since this is a repeated test, this will cause an exception if the @BeforeEach is not resetting properly
         VirtualTimeScheduler.getOrSet();
-    }
-
-    static void verifySchedulerInstallations() {
-        // assert no virtual time scheduler is installed (due to VirtualTimeScheduler.reset())
-        Assert.assertThrows(IllegalStateException.class, VirtualTimeScheduler::get);
-
-        // assert scheduler creation throws error (due to ErrorSchedulerFactory install)
-        Assert.assertThrows(SchedulerCreationException.class, Schedulers::elastic);
-        Assert.assertThrows(SchedulerCreationException.class, Schedulers::boundedElastic);
-        Assert.assertThrows(SchedulerCreationException.class, Schedulers::parallel);
-        Assert.assertThrows(SchedulerCreationException.class, Schedulers::single);
     }
 
 }

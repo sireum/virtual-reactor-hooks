@@ -16,12 +16,12 @@
 
 package org.sireum.hooks;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.reactivestreams.Subscription;
 import reactor.core.CoreSubscriber;
 import reactor.core.Scannable;
 import reactor.core.publisher.*;
+import reactor.util.annotation.NonNull;
+import reactor.util.annotation.Nullable;
 import reactor.util.context.Context;
 import reactor.util.function.Tuple2;
 
@@ -65,11 +65,11 @@ final class BarrierAssembly {
      * @param <A> the type of the accumulator / state-tracker managed as values are pushed into the virtual section
      * @return a {@link Flux} of the same values, without timestamps, and within an unclosed virtual section
      */
-    @NotNull
-    static <T,A> Flux<T> fluxBegin(@NotNull Flux<Tuple2<Long,T>> source,
-                                   @NotNull Supplier<A> initial,
-                                   @NotNull BiFunction<A, ? super Tuple2<Instant,T>, ?  extends A> accumulator,
-                                   @NotNull Function<A, Instant> extractor) {
+    @NonNull
+    static <T,A> Flux<T> fluxBegin(@NonNull Flux<Tuple2<Long,T>> source,
+                                   @NonNull Supplier<A> initial,
+                                   @NonNull BiFunction<A, ? super Tuple2<Instant,T>, ?  extends A> accumulator,
+                                   @NonNull Function<A, Instant> extractor) {
         return FluxAssembly.begin(source, initial, accumulator, extractor);
     }
 
@@ -94,8 +94,8 @@ final class BarrierAssembly {
      * @param <T> the type of value emitted by the source {@link Flux}
      * @return a {@link Flux} of the same values that is no longer in virtual time
      */
-    @NotNull
-    static <T> Flux<T> fluxEnd(@NotNull Flux<T> source, @NotNull Supplier<Instant> startTime) {
+    @NonNull
+    static <T> Flux<T> fluxEnd(@NonNull Flux<T> source, @NonNull Supplier<Instant> startTime) {
         return FluxAssembly.end(source, startTime);
     }
 
@@ -117,11 +117,11 @@ final class BarrierAssembly {
      * @param <A> the type of the accumulator / state-tracker managed when the value is pushed into the virtual section
      * @return a {@link Mono} of the same value, without its timestamp, and within an unclosed virtual section
      */
-    @NotNull
-    static <T,A> Mono<T> monoBegin(@NotNull Mono<Tuple2<Long,T>> source,
-                                   @NotNull Supplier<A> initial,
-                                   @NotNull BiFunction<A, ? super Tuple2<Instant,T>, ?  extends A> accumulator,
-                                   @NotNull Function<A, Instant> extractor) {
+    @NonNull
+    static <T,A> Mono<T> monoBegin(@NonNull Mono<Tuple2<Long,T>> source,
+                                   @NonNull Supplier<A> initial,
+                                   @NonNull BiFunction<A, ? super Tuple2<Instant,T>, ?  extends A> accumulator,
+                                   @NonNull Function<A, Instant> extractor) {
         return MonoAssembly.begin(source, initial, accumulator, extractor);
     }
 
@@ -133,8 +133,8 @@ final class BarrierAssembly {
      * @param <T> the type of value emitted by the source {@link Mono}
      * @return a {@link Mono} of the same value that is no longer in virtual time
      */
-    @NotNull
-    static <T> Mono<T> monoEnd(@NotNull Mono<T> source, @NotNull Supplier<Instant> startTime) {
+    @NonNull
+    static <T> Mono<T> monoEnd(@NonNull Mono<T> source, @NonNull Supplier<Instant> startTime) {
         return MonoAssembly.end(source, startTime);
     }
 
@@ -147,16 +147,16 @@ final class BarrierAssembly {
             throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
         }
 
-        @NotNull
-        private static <T,A> Flux<T> begin(@NotNull Flux<Tuple2<Long,T>> source,
-                                           @NotNull Supplier<A> initial,
-                                           @NotNull BiFunction<A, ? super Tuple2<Instant,T>, ?  extends A> accumulator,
-                                           @NotNull Function<A, Instant> extractor) {
+        @NonNull
+        private static <T,A> Flux<T> begin(@NonNull Flux<Tuple2<Long,T>> source,
+                                           @NonNull Supplier<A> initial,
+                                           @NonNull BiFunction<A, ? super Tuple2<Instant,T>, ?  extends A> accumulator,
+                                           @NonNull Function<A, Instant> extractor) {
             return onAssembly(new FluxBeginVirtualTimeOperator<>(source, initial, accumulator, extractor));
         }
 
-        @NotNull
-        private static <T> Flux<T> end(@NotNull Flux<T> source, @NotNull Supplier<Instant> startTime) {
+        @NonNull
+        private static <T> Flux<T> end(@NonNull Flux<T> source, @NonNull Supplier<Instant> startTime) {
             return onAssembly(new FluxEndVirtualTimeOperator<>(source, startTime));
         }
     }
@@ -170,16 +170,16 @@ final class BarrierAssembly {
             throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
         }
 
-        @NotNull
-        private static <T,A> Mono<T> begin(@NotNull Mono<Tuple2<Long,T>> source,
-                                           @NotNull Supplier<A> initial,
-                                           @NotNull BiFunction<A, ? super Tuple2<Instant,T>, ?  extends A> accumulator,
-                                           @NotNull Function<A, Instant> extractor) {
+        @NonNull
+        private static <T,A> Mono<T> begin(@NonNull Mono<Tuple2<Long,T>> source,
+                                           @NonNull Supplier<A> initial,
+                                           @NonNull BiFunction<A, ? super Tuple2<Instant,T>, ?  extends A> accumulator,
+                                           @NonNull Function<A, Instant> extractor) {
             return onAssembly(new MonoBeginVirtualTimeOperator<>(source, initial, accumulator, extractor));
         }
 
-        @NotNull
-        private static <T> Mono<T> end(@NotNull Mono<T> source, @NotNull Supplier<Instant> startTime) {
+        @NonNull
+        private static <T> Mono<T> end(@NonNull Mono<T> source, @NonNull Supplier<Instant> startTime) {
             return onAssembly(new MonoEndVirtualTimeOperator<>(source, startTime));
         }
     }
@@ -190,10 +190,10 @@ final class BarrierAssembly {
         private final BiFunction<A, ? super Tuple2<Instant,T>, ?  extends A> accumulator;
         private final Function<A, Instant> extractor;
 
-        private FluxBeginVirtualTimeOperator(@NotNull Flux<Tuple2<Long,T>> source,
-                                             @NotNull Supplier<A> initial,
-                                             @NotNull BiFunction<A, ? super Tuple2<Instant,T>, ?  extends A> accumulator,
-                                             @NotNull Function<A, Instant> extractor) {
+        private FluxBeginVirtualTimeOperator(@NonNull Flux<Tuple2<Long,T>> source,
+                                             @NonNull Supplier<A> initial,
+                                             @NonNull BiFunction<A, ? super Tuple2<Instant,T>, ?  extends A> accumulator,
+                                             @NonNull Function<A, Instant> extractor) {
             super(source);
             this.initial = initial;
             this.accumulator = accumulator;
@@ -201,23 +201,23 @@ final class BarrierAssembly {
         }
 
         @Override
-        public void subscribe(@NotNull CoreSubscriber<? super T> actual) {
+        public void subscribe(@NonNull CoreSubscriber<? super T> actual) {
             source.subscribe(new BarrierBeginInnerOperator<>(actual, initial.get(), accumulator, extractor));
         }
     }
 
     private static final class FluxEndVirtualTimeOperator<T> extends FluxOperator<T,T> {
 
-        @NotNull
+        @NonNull
         private final Supplier<Instant> startTime;
 
-        private FluxEndVirtualTimeOperator(@NotNull Flux<? extends T> source, @NotNull Supplier<Instant> startTime) {
+        private FluxEndVirtualTimeOperator(@NonNull Flux<? extends T> source, @NonNull Supplier<Instant> startTime) {
             super(source);
             this.startTime = startTime;
         }
 
         @Override
-        public void subscribe(@NotNull CoreSubscriber<? super T> actual) {
+        public void subscribe(@NonNull CoreSubscriber<? super T> actual) {
             source.subscribe(new BarrierEndInnerOperator<>(actual, startTime.get()));
         }
     }
@@ -228,10 +228,10 @@ final class BarrierAssembly {
         private final BiFunction<A, ? super Tuple2<Instant,T>, ?  extends A> accumulator;
         private final Function<A, Instant> extractor;
 
-        private MonoBeginVirtualTimeOperator(@NotNull Mono<Tuple2<Long,T>> source,
-                                             @NotNull Supplier<A> initial,
-                                             @NotNull BiFunction<A, ? super Tuple2<Instant,T>, ?  extends A> accumulator,
-                                             @NotNull Function<A, Instant> extractor) {
+        private MonoBeginVirtualTimeOperator(@NonNull Mono<Tuple2<Long,T>> source,
+                                             @NonNull Supplier<A> initial,
+                                             @NonNull BiFunction<A, ? super Tuple2<Instant,T>, ?  extends A> accumulator,
+                                             @NonNull Function<A, Instant> extractor) {
             super(source);
             this.initial = initial;
             this.accumulator = accumulator;
@@ -239,23 +239,23 @@ final class BarrierAssembly {
         }
 
         @Override
-        public void subscribe(@NotNull CoreSubscriber<? super T> actual) {
+        public void subscribe(@NonNull CoreSubscriber<? super T> actual) {
             source.subscribe(new BarrierBeginInnerOperator<>(actual, initial.get(), accumulator, extractor));
         }
     }
 
     private static final class MonoEndVirtualTimeOperator<T> extends MonoOperator<T,T> {
 
-        @NotNull
+        @NonNull
         private final Supplier<Instant> startTime;
 
-        private MonoEndVirtualTimeOperator(@NotNull Mono<? extends T> source, @NotNull Supplier<Instant> startTime) {
+        private MonoEndVirtualTimeOperator(@NonNull Mono<? extends T> source, @NonNull Supplier<Instant> startTime) {
             super(source);
             this.startTime = startTime;
         }
 
         @Override
-        public void subscribe(@NotNull CoreSubscriber<? super T> actual) {
+        public void subscribe(@NonNull CoreSubscriber<? super T> actual) {
             source.subscribe(new BarrierEndInnerOperator<>(actual, startTime.get()));
         }
     }
@@ -277,10 +277,10 @@ final class BarrierAssembly {
 
         private A acc;
 
-        private BarrierBeginInnerOperator(@NotNull CoreSubscriber<? super T> actual,
-                                          @NotNull A initial,
-                                          @NotNull BiFunction<A, ? super Tuple2<Instant,T>, ?  extends A> accumulator,
-                                          @NotNull Function<A, Instant> extractor) {
+        private BarrierBeginInnerOperator(@NonNull CoreSubscriber<? super T> actual,
+                                          @NonNull A initial,
+                                          @NonNull BiFunction<A, ? super Tuple2<Instant,T>, ?  extends A> accumulator,
+                                          @NonNull Function<A, Instant> extractor) {
             this.actual = actual;
             this.context = actual.currentContext();
             this.scheduler = context.getOrDefault(SCHEDULER_CONTEXT_KEY, null);
@@ -300,7 +300,7 @@ final class BarrierAssembly {
         }
 
         @Override
-        public void onSubscribe(@NotNull Subscription s) {
+        public void onSubscribe(@NonNull Subscription s) {
             if (Operators.validate(this.s, s)) {
                 this.s = s;
                 if (scheduler == null) {
@@ -379,7 +379,7 @@ final class BarrierAssembly {
             }
         }
 
-        @NotNull
+        @NonNull
         @Override
         public final Context currentContext() {
             return context;
@@ -393,7 +393,7 @@ final class BarrierAssembly {
         }
 
         @Override
-        public final Object scanUnsafe(@NotNull Attr key) {
+        public final Object scanUnsafe(@NonNull Attr key) {
             if (key == Attr.PARENT) return s;
             if (key == Attr.TERMINATED) return done;
             if (key == Attr.ACTUAL) return actual;
@@ -414,7 +414,7 @@ final class BarrierAssembly {
 
         private Subscription s;
 
-        private BarrierEndInnerOperator(@NotNull CoreSubscriber<? super T> actual, @NotNull Instant startTime) {
+        private BarrierEndInnerOperator(@NonNull CoreSubscriber<? super T> actual, @NonNull Instant startTime) {
             this.actual = actual;
             this.scheduler = VirtualTimeScheduler.create();
 
@@ -440,7 +440,7 @@ final class BarrierAssembly {
         }
 
         @Override
-        public void onSubscribe(@NotNull Subscription s) {
+        public void onSubscribe(@NonNull Subscription s) {
             if (Operators.validate(this.s, s)) {
                 this.s = s;
 
@@ -482,14 +482,14 @@ final class BarrierAssembly {
             }
         }
 
-        @NotNull
+        @NonNull
         @Override
         public Context currentContext() {
             return context;
         }
 
         @Override
-        public Object scanUnsafe(@NotNull Attr key) {
+        public Object scanUnsafe(@NonNull Attr key) {
             if (key == Attr.PARENT) return s;
             if (key == Attr.TERMINATED) return done;
             if (key == Attr.ACTUAL) return actual;

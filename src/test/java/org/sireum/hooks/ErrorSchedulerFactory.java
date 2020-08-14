@@ -16,9 +16,9 @@
 
 package org.sireum.hooks;
 
-import org.jetbrains.annotations.NotNull;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
+import reactor.util.annotation.NonNull;
 
 import java.util.concurrent.ThreadFactory;
 
@@ -26,26 +26,26 @@ final class ErrorSchedulerFactory implements Schedulers.Factory {
 
     // use Schedulers.resetFactory() to uninstall
     public static void install() {
-        Schedulers.setFactory(new ErrorSchedulerFactory()); // todo uncomment
+        Schedulers.setFactory(new ErrorSchedulerFactory());
     }
 
     @Override
-    public final @NotNull Scheduler newElastic(int ttlSeconds, @NotNull ThreadFactory threadFactory) {
+    public final @NonNull Scheduler newElastic(int ttlSeconds, @NonNull ThreadFactory threadFactory) {
         throw new SchedulerCreationException("attempted to create new Elastic scheduler");
     }
 
     @Override
-    public final @NotNull Scheduler newBoundedElastic(int threadCap, int queuedTaskCap, @NotNull ThreadFactory threadFactory, int ttlSeconds) {
+    public final @NonNull Scheduler newBoundedElastic(int threadCap, int queuedTaskCap, @NonNull ThreadFactory threadFactory, int ttlSeconds) {
         throw new SchedulerCreationException("attempted to create new BoundedElastic scheduler");
     }
 
     @Override
-    public final @NotNull Scheduler newParallel(int parallelism, @NotNull ThreadFactory threadFactory) {
+    public final @NonNull Scheduler newParallel(int parallelism, @NonNull ThreadFactory threadFactory) {
         throw new SchedulerCreationException("attempted to create new Parallel scheduler");
     }
 
     @Override
-    public final @NotNull Scheduler newSingle(@NotNull ThreadFactory threadFactory) {
+    public final @NonNull Scheduler newSingle(@NonNull ThreadFactory threadFactory) {
         throw new SchedulerCreationException("attempted to create new Single scheduler");
     }
 

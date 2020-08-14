@@ -17,7 +17,6 @@
 package org.sireum.hooks;
 
 import org.aspectj.lang.ProceedingJoinPoint;
-import org.jetbrains.annotations.NotNull;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -27,6 +26,7 @@ import reactor.core.Scannable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Operators;
+import reactor.util.annotation.NonNull;
 import reactor.util.context.Context;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
@@ -132,8 +132,8 @@ public final class TimeBarriers {
      * @return the same {@link Flux}, except now downstream operators will have a non-virtual-hint attached (except for
      *          within virtual sections)
      */
-    @NotNull
-    public static <T> Flux<T> ATTACH_NOT_VIRTUAL_HINT(@NotNull Flux<T> flux) {
+    @NonNull
+    public static <T> Flux<T> ATTACH_NOT_VIRTUAL_HINT(@NonNull Flux<T> flux) {
         return flux.tag(INSTRUMENTATION_ASSEMBLY_HINT_KEY, DO_NOT_INSTRUMENT_HINT);
     }
 
@@ -158,8 +158,8 @@ public final class TimeBarriers {
      * @return the same {@link Mono}, except now downstream operators will have a non-virtual-hint attached (except for
      *          within virtual sections)
      */
-    @NotNull
-    public static <T> Mono<T> ATTACH_NOT_VIRTUAL_HINT(@NotNull Mono<T> mono) {
+    @NonNull
+    public static <T> Mono<T> ATTACH_NOT_VIRTUAL_HINT(@NonNull Mono<T> mono) {
         return mono.tag(INSTRUMENTATION_ASSEMBLY_HINT_KEY, DO_NOT_INSTRUMENT_HINT);
     }
 
@@ -178,8 +178,8 @@ public final class TimeBarriers {
      * @param <T> the type of value emitted by the source {@link Flux}
      * @return a {@link Flux} of the same values, without timestamps, and within an unclosed virtual section
      */
-    @NotNull
-    public static <T> Flux<T> ENTER_VIRTUAL_TIME(@NotNull Flux<Tuple2<Long,T>> flux) {
+    @NonNull
+    public static <T> Flux<T> ENTER_VIRTUAL_TIME(@NonNull Flux<Tuple2<Long,T>> flux) {
         return ENTER_VIRTUAL_TIME(flux, MAX_TIME_EXTRACTOR);
     }
 
@@ -198,8 +198,8 @@ public final class TimeBarriers {
      * @param <T> the type of value emitted by the source {@link Flux}
      * @return a {@link Flux} of the same values, without timestamps, and within an unclosed virtual section
      */
-    @NotNull
-    public static <T> Flux<T> ENTER_VIRTUAL_TIME(@NotNull Flux<Tuple2<Long,T>> flux, @NotNull Instant stopTime) {
+    @NonNull
+    public static <T> Flux<T> ENTER_VIRTUAL_TIME(@NonNull Flux<Tuple2<Long,T>> flux, @NonNull Instant stopTime) {
         return ENTER_VIRTUAL_TIME(flux, ignored -> stopTime);
     }
 
@@ -218,8 +218,8 @@ public final class TimeBarriers {
      * @param <T> the type of value emitted by the source {@link Flux}
      * @return a {@link Flux} of the same values, without timestamps, and within an unclosed virtual section
      */
-    @NotNull
-    public static <T> Flux<T> ENTER_VIRTUAL_TIME(@NotNull Flux<Tuple2<Long,T>> flux, @NotNull Function<Instant, Instant> stopTime) {
+    @NonNull
+    public static <T> Flux<T> ENTER_VIRTUAL_TIME(@NonNull Flux<Tuple2<Long,T>> flux, @NonNull Function<Instant, Instant> stopTime) {
         return ENTER_VIRTUAL_TIME(flux, NULL_SUPPLIER, LAST_TIME_ACC, stopTime);
     }
 
@@ -258,11 +258,11 @@ public final class TimeBarriers {
      * @param <A> the type of the accumulator / state-tracker managed as values are pushed into the virtual section
      * @return a {@link Flux} of the same values, without timestamps, and within an unclosed virtual section
      */
-    @NotNull
-    public static <T,A> Flux<T> ENTER_VIRTUAL_TIME(@NotNull Flux<Tuple2<Long,T>> flux,
-                                                   @NotNull Supplier<A> initial,
-                                                   @NotNull BiFunction<A, ? super Tuple2<Instant,T>, ? extends A> accumulator,
-                                                   @NotNull Function<A, Instant> extractor) {
+    @NonNull
+    public static <T,A> Flux<T> ENTER_VIRTUAL_TIME(@NonNull Flux<Tuple2<Long,T>> flux,
+                                                   @NonNull Supplier<A> initial,
+                                                   @NonNull BiFunction<A, ? super Tuple2<Instant,T>, ? extends A> accumulator,
+                                                   @NonNull Function<A, Instant> extractor) {
         return flux
                 .subscriberContext(context -> context.delete(PackageUtils.SCHEDULER_CONTEXT_KEY))
                 .transform(TimeBarriers::REMOVE_INSTRUMENTATION_HINTS)
@@ -284,8 +284,8 @@ public final class TimeBarriers {
      * @param <T> the type of value emitted by the source {@link Mono}
      * @return a {@link Mono} of the same values, without timestamps, and within an unclosed virtual section
      */
-    @NotNull
-    public static <T> Mono<T> ENTER_VIRTUAL_TIME(@NotNull Mono<Tuple2<Long,T>> mono) {
+    @NonNull
+    public static <T> Mono<T> ENTER_VIRTUAL_TIME(@NonNull Mono<Tuple2<Long,T>> mono) {
         return ENTER_VIRTUAL_TIME(mono, MAX_TIME_EXTRACTOR);
     }
 
@@ -304,8 +304,8 @@ public final class TimeBarriers {
      * @param <T> the type of value emitted by the source {@link Mono}
      * @return a {@link Mono} of the same values, without timestamps, and within an unclosed virtual section
      */
-    @NotNull
-    public static <T> Mono<T> ENTER_VIRTUAL_TIME(@NotNull Mono<Tuple2<Long,T>> mono, @NotNull Instant stopTime) {
+    @NonNull
+    public static <T> Mono<T> ENTER_VIRTUAL_TIME(@NonNull Mono<Tuple2<Long,T>> mono, @NonNull Instant stopTime) {
         return ENTER_VIRTUAL_TIME(mono, ignored -> stopTime);
     }
 
@@ -324,8 +324,8 @@ public final class TimeBarriers {
      * @param <T> the type of value emitted by the source {@link Mono}
      * @return a {@link Mono} of the same values, without timestamps, and within an unclosed virtual section
      */
-    @NotNull
-    public static <T> Mono<T> ENTER_VIRTUAL_TIME(@NotNull Mono<Tuple2<Long,T>> mono, @NotNull Function<Instant, Instant> stopTime) {
+    @NonNull
+    public static <T> Mono<T> ENTER_VIRTUAL_TIME(@NonNull Mono<Tuple2<Long,T>> mono, @NonNull Function<Instant, Instant> stopTime) {
         return ENTER_VIRTUAL_TIME(mono, NULL_SUPPLIER, LAST_TIME_ACC, stopTime);
     }
 
@@ -364,11 +364,11 @@ public final class TimeBarriers {
      * @param <A> the type of the accumulator / state-tracker managed as values are pushed into the virtual section
      * @return a {@link Mono} of the same values, without timestamps, and within an unclosed virtual section
      */
-    @NotNull
-    public static <T,A> Mono<T> ENTER_VIRTUAL_TIME(@NotNull Mono<Tuple2<Long,T>> mono,
-                                                   @NotNull Supplier<A> initial,
-                                                   @NotNull BiFunction<A, ? super Tuple2<Instant,T>, ? extends A> accumulator,
-                                                   @NotNull Function<A, Instant> extractor) {
+    @NonNull
+    public static <T,A> Mono<T> ENTER_VIRTUAL_TIME(@NonNull Mono<Tuple2<Long,T>> mono,
+                                                   @NonNull Supplier<A> initial,
+                                                   @NonNull BiFunction<A, ? super Tuple2<Instant,T>, ? extends A> accumulator,
+                                                   @NonNull Function<A, Instant> extractor) {
         return mono
                 .subscriberContext(context -> context.delete(PackageUtils.SCHEDULER_CONTEXT_KEY))
                 .transform(TimeBarriers::REMOVE_INSTRUMENTATION_HINTS)
@@ -387,8 +387,8 @@ public final class TimeBarriers {
      * @param <T> the type of value emitted by the source {@link Flux}
      * @return a {@link Flux} of the same values that is no longer in virtual time
      */
-    @NotNull
-    public static <T> Flux<T> EXIT_VIRTUAL_TIME(@NotNull Flux<T> flux) {
+    @NonNull
+    public static <T> Flux<T> EXIT_VIRTUAL_TIME(@NonNull Flux<T> flux) {
         return EXIT_VIRTUAL_TIME(flux, MIN_TIME_SUPPLIER);
     }
 
@@ -404,8 +404,8 @@ public final class TimeBarriers {
      * @param <T> the type of value emitted by the source {@link Flux}
      * @return a {@link Flux} of the same values that is no longer in virtual time
      */
-    @NotNull
-    public static <T> Flux<T> EXIT_VIRTUAL_TIME(@NotNull Flux<T> flux, @NotNull Instant startTime) {
+    @NonNull
+    public static <T> Flux<T> EXIT_VIRTUAL_TIME(@NonNull Flux<T> flux, @NonNull Instant startTime) {
         return EXIT_VIRTUAL_TIME(flux, () -> startTime);
     }
 
@@ -430,8 +430,8 @@ public final class TimeBarriers {
      * @param <T> the type of value emitted by the source {@link Flux}
      * @return a {@link Flux} of the same values that is no longer in virtual time
      */
-    @NotNull
-    public static <T> Flux<T> EXIT_VIRTUAL_TIME(@NotNull Flux<T> flux, @NotNull Supplier<Instant> startTime) {
+    @NonNull
+    public static <T> Flux<T> EXIT_VIRTUAL_TIME(@NonNull Flux<T> flux, @NonNull Supplier<Instant> startTime) {
         final Scannable scan = Scannable.from(flux);
         if (scan.isScanAvailable() && scan.tags().anyMatch(TimeBarriers::guardTag)) {
             return Flux.error(createIllegalHintError());
@@ -454,8 +454,8 @@ public final class TimeBarriers {
      * @param <T> the type of value emitted by the source {@link Mono}
      * @return a {@link Mono} of the same values that is no longer in virtual time
      */
-    @NotNull
-    public static <T> Mono<T> EXIT_VIRTUAL_TIME(@NotNull Mono<T> mono) {
+    @NonNull
+    public static <T> Mono<T> EXIT_VIRTUAL_TIME(@NonNull Mono<T> mono) {
         return EXIT_VIRTUAL_TIME(mono, MIN_TIME_SUPPLIER);
     }
 
@@ -471,8 +471,8 @@ public final class TimeBarriers {
      * @param <T> the type of value emitted by the source {@link Mono}
      * @return a {@link Mono} of the same values that is no longer in virtual time
      */
-    @NotNull
-    public static <T> Mono<T> EXIT_VIRTUAL_TIME(@NotNull Mono<T> mono, @NotNull Instant startTime) {
+    @NonNull
+    public static <T> Mono<T> EXIT_VIRTUAL_TIME(@NonNull Mono<T> mono, @NonNull Instant startTime) {
         return EXIT_VIRTUAL_TIME(mono, () -> startTime);
     }
 
@@ -499,8 +499,8 @@ public final class TimeBarriers {
      * @param <T> the type of value emitted by the source {@link Flux}
      * @return a {@link Flux} of the same values that is no longer in virtual time
      */
-    @NotNull
-    public static <T> Mono<T> EXIT_VIRTUAL_TIME(@NotNull Mono<T> mono, @NotNull Supplier<Instant> startTime) {
+    @NonNull
+    public static <T> Mono<T> EXIT_VIRTUAL_TIME(@NonNull Mono<T> mono, @NonNull Supplier<Instant> startTime) {
         final Scannable scan = Scannable.from(mono);
         if (scan.isScanAvailable() && scan.tags().anyMatch(TimeBarriers::guardTag)) {
             return Mono.error(createIllegalHintError());
@@ -520,7 +520,7 @@ public final class TimeBarriers {
      * @return A new {@link BarrierAssemblyException} indicating EXIT_VIRTUAL_TIME discovered an erroneous
      *         DO_NOT_INSTRUMENT_HINT within its upstream virtual-time section.
      */
-    @NotNull
+    @NonNull
     private static BarrierAssemblyException createIllegalHintError() {
         return new BarrierAssemblyException("TimeBarrier's EXIT_VIRTUAL_TIME logic was invoked, but " +
                 "the publisher was tagged with a DO_NOT_INSTRUMENT_HINT that should have been removed by an upstream " +
@@ -533,8 +533,8 @@ public final class TimeBarriers {
      * @param scan the {@link Scannable} whose tags should be copied with the exception of INSTRUMENTATION_GUARD_TAG
      * @return an array of scan's tags, excluding INSTRUMENTATION_GUARD_TAG
      */
-    @NotNull
-    private static Tuple2<String, String>[] getOtherTags(@NotNull Scannable scan) {
+    @NonNull
+    private static Tuple2<String, String>[] getOtherTags(@NonNull Scannable scan) {
         return scan.tags().filter(tag -> !guardTag(tag)).toArray((IntFunction<Tuple2<String, String>[]>) Tuple2[]::new);
     }
 
@@ -547,8 +547,8 @@ public final class TimeBarriers {
      * @param <T> the type of value emitted by the flux
      * @return if no INSTRUMENTATION_GUARD_TAG is found, flux is returned. Otherwise, a copy is returned minus said tag
      */
-    @NotNull
-    private static <T> Flux<T> REMOVE_INSTRUMENTATION_HINTS(@NotNull Flux<T> flux) {
+    @NonNull
+    private static <T> Flux<T> REMOVE_INSTRUMENTATION_HINTS(@NonNull Flux<T> flux) {
         final Scannable scan = Scannable.from(flux);
 
         if (scan.tags().noneMatch(TimeBarriers::guardTag)) {
@@ -572,8 +572,8 @@ public final class TimeBarriers {
      * @param <T> the type of value emitted by the mono
      * @return if no INSTRUMENTATION_GUARD_TAG is found, mono is returned. Otherwise, a copy is returned minus said tag
      */
-    @NotNull
-    private static <T> Mono<T> REMOVE_INSTRUMENTATION_HINTS(@NotNull Mono<T> mono) {
+    @NonNull
+    private static <T> Mono<T> REMOVE_INSTRUMENTATION_HINTS(@NonNull Mono<T> mono) {
         final Scannable scan = Scannable.from(mono);
 
         if (scan.tags().noneMatch(TimeBarriers::guardTag)) {
@@ -632,7 +632,7 @@ public final class TimeBarriers {
          *
          * @param source the template for this assembly-tag erased {@link CorePublisher} clone.
          */
-        private TagErasedPublisher(@NotNull CorePublisher<T> source) {
+        private TagErasedPublisher(@NonNull CorePublisher<T> source) {
             this.upstream = source;
         }
 
@@ -642,10 +642,10 @@ public final class TimeBarriers {
          * @param delegate the source which all actions are delegated to
          */
         @Override
-        public final void subscribe(@NotNull CoreSubscriber<? super T> delegate) {
+        public final void subscribe(@NonNull CoreSubscriber<? super T> delegate) {
             final CoreSubscriber<T> coreSubscriber = new CoreSubscriber<T>() {
                 @Override
-                public void onSubscribe(@NotNull Subscription subscription) {
+                public void onSubscribe(@NonNull Subscription subscription) {
                     delegate.onSubscribe(subscription);
                 }
                 @Override

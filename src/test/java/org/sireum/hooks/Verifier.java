@@ -16,7 +16,6 @@
 
 package org.sireum.hooks;
 
-import org.jetbrains.annotations.Nullable;
 import org.reactivestreams.Publisher;
 import org.testng.collections.Lists;
 import reactor.core.publisher.Flux;
@@ -24,6 +23,7 @@ import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 import reactor.test.scheduler.VirtualTimeScheduler;
+import reactor.util.annotation.Nullable;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
@@ -36,6 +36,18 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+/**
+ * Testing utility that makes it easier to confirm if a virtual-section behaves the same way as a Flux tested using
+ * StepVerifier.withVirtualTime(). This is useful because StepVerifier.withVirtualTime() will not work for
+ * virtual-sections (because they manage their own clock) and sections are instead tested with StepVerifier.create().
+ * This means that comparing the result of both testing strategies would require writing the same logic twice (but in
+ * a slightly different way).
+ * This class provides a small subset of StepVerifier's API which, for sufficiently simple tests, can be used to
+ * write a test that will be translated into both the StepVerifier.create() and StepVerifier.withVirtualTime() variants.
+ * <br>
+ * In other words, this class lets users run both tests despite only writing it once.
+ * @param <T> the type of the flux to verify
+ */
 public class Verifier<T> {
 
     private final Flux<T> flux;
@@ -131,18 +143,9 @@ public class Verifier<T> {
 
     }
 
+    @SuppressWarnings("unchecked")
     private StepVerifier.Step<T> createExpectNextStep(StepVerifier.Step<T> current, List<T> values) {
-        final int size = values.size();
-        switch (size) {
-            case 0: return current;
-            case 1: return current.expectNext(values.get(0));
-            case 2: return current.expectNext(values.get(0),values.get(1));
-            case 3: return current.expectNext(values.get(0),values.get(1),values.get(2));
-            case 4: return current.expectNext(values.get(0),values.get(1),values.get(2),values.get(3));
-            case 5: return current.expectNext(values.get(0),values.get(1),values.get(2),values.get(3),values.get(4));
-            case 6: return current.expectNext(values.get(0),values.get(1),values.get(2),values.get(3),values.get(4),values.get(5));
-            default: return current.expectNext((T) values.toArray()); // todo can make default, was for sanity check
-        }
+        return current.expectNext((T[]) values.toArray());
     }
 
     private void verifyInstrumented() {
