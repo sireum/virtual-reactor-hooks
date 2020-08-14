@@ -268,7 +268,7 @@ will be used as requested.
 **How is it determined whether or not a time-based operator exists within a virtual section?**
 Within a virtual-time section, each subscriber holds a unique virtual-time scheduler within its
 [Context](https://projectreactor.io/docs/core/release/reference/#context.api). When a time-based operator is created,
-for a Flux/Mono, this virtual-time-based reactor distribution will instead create and return a corresponding
+this virtual-time-based reactor distribution will instead create and return a corresponding
 [deferWithContext](https://projectreactor.io/docs/core/release/api/reactor/core/publisher/Flux.html#deferWithContext-java.util.function.Function-)
 operator which become the user's intended time-based operator at subscription time. 
 
