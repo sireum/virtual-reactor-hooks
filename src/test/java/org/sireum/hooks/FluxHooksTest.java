@@ -44,7 +44,7 @@ import static java.util.Collections.nCopies;
 import static org.sireum.hooks.TestUtils.*;
 
 public class FluxHooksTest {
-
+    
     @BeforeMethod
     public void beforeEach() {
         StepVerifier.setDefaultTimeout(DEFAULT_VERIFY_TIMEOUT);
@@ -57,6 +57,21 @@ public class FluxHooksTest {
     public static void afterEach() {
         VirtualTimeScheduler.reset();
         Schedulers.resetFactory();
+    }
+
+
+    // todo rm this random test
+    @Test
+    void randomTest() {
+        final Flux<String> f = Flux.just(1, 2, 3)
+                .onBackpressureDrop()
+                .map(n -> Integer.toString(n))
+                .doFinally(data -> {
+                    System.out.println(data);
+                });
+
+        f.blockLast();
+
     }
 
     @Test//(timeOut = DEFAULT_TEST_TIMEOUT)
@@ -938,6 +953,8 @@ public class FluxHooksTest {
                 .window(Duration.ofSeconds(3))
                 .flatMap(Flux::collectList);
 
+        // note:      [ = open buffer (inclusive), ) = close buffer (exclusive)
+        //
         // 0  1  2  3  4  5  6  7  8  9  0  1  2  3  4  5  6  7  8
         //       a     b     c     d     e     f
         // [-------)[-------)[-------)[-------)[-------)[-------)[
@@ -952,9 +969,8 @@ public class FluxHooksTest {
                 .expectNext(list("c", "d"))
                 .expectNoEvent(Duration.ofSeconds(3))
                 .expectNext(list("e"))
-//                .expectNoEvent(Duration.ofSeconds(3))
                 .expectNext(list("f"))
-                .verifyComplete();
+                .verifyComplete(); 
     }
 
     @Test//(timeOut = DEFAULT_TEST_TIMEOUT)
@@ -1075,7 +1091,7 @@ public class FluxHooksTest {
                 .flatMap(Flux::collectList);
 
         // timeline:
-        // note: o = buffering elements, x = dropping elements. Capital letter = aligns with event
+        // note:       [ = open buffer (inclusive), ) = close buffer (exclusive)
         // ===============================================
         // events:             a       b       c       d       e       f
         // time(s):    0   1   2   3   4   5   6   7   8   9   0   1   2 ...
@@ -1116,8 +1132,7 @@ public class FluxHooksTest {
                 .transform(TimeBarriers::EXIT_VIRTUAL_TIME);
 
         // timeline:
-        // note: o = buffering elements, x = dropping elements. Capital letter = aligns with event.
-        //       [ = open buffer (inclusive), ) = close buffer (exclusive)
+        // note:       [ = open buffer (inclusive), ) = close buffer (exclusive)
         // ===============================================
         // events:             a       b       c       d       e       f
         // time(s):    0   1   2   3   4   5   6   7   8   9   0   1   2 ...

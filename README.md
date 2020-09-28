@@ -1,8 +1,8 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-Virtual-reactor-hooks is an unofficial third-party distribution of [Reactor](https://projectreactor.io/) that extends
-reactor's feature set to also include suspending operator chains into virtual time.
+Virtual-reactor-hooks is an unofficial third-party distribution of [Reactor](https://projectreactor.io/) that supports 
+virtual time scheduling in production.
 
 <!-- GETTING STARTED -->
 ## Getting Started
@@ -53,7 +53,7 @@ libraryDependencies += "org.sireum" % "virtual-reactor-hooks" % "3.3.5.RELEASE-b
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-When in a virtual section, any time-based operator called without a specific `Scheduler` will use a 
+Within a virtual section, any time-based operator called without a specific `Scheduler` will use a 
 `VirtualTimeScheduler` behind the scenes.
 
 There are two prerequisites needed for virtual-time scheduling:
@@ -104,6 +104,15 @@ Per-subscriber output:
 ```
 
 ### Example 2
+```java
+todo better example
+```
+Per-subscriber output:
+```
+todo
+```
+
+### Example 3
 Virtual-reactor-hooks provides a `TimeUtils` class containing some useful utilities for dealing with virtual time.
 In this example, `TimeUtils.attachTimestamp(Instant, <T>)` is used to create the timestamp tuples.
 ```java
@@ -116,7 +125,7 @@ Flux.range(1, 10)
 // will emit: 6, 8, 10
 ```
 
-### Example 3
+### Example 4
 A virtual section's clock is unique to each subscriber and can run concurrently to other virtual sections without issue.
 ```java
 CountDownLatch latch = new CountDownLatch(4);
@@ -163,7 +172,7 @@ solid grasp of its effects on synchronization and assembly. Use the following wo
 Note the upstream virtual section may outpace the downstream, so synchronization may be needed depending on use case.
 However this synchronization is still easier than without the workaround.
 
-### Example 4
+### Example 5
 
 By default, a virtual section begins at Instant.ofEpochMilli(0L) and finally advances to 
 Instant.ofEpochMilli(Long.MAX_VALUE) when onComplete() is received. This may appear to be a massive leap in time, but to
@@ -266,22 +275,22 @@ clock overtop the previous scheduler's thread. The current thread will be not ch
 and users are welcome to run multiple virtual sections concurrently, for example by calling 
 `.publishOn(Schedulers.parallel())` upstream to the section.
 
-**Do virtual sections support backpressure?** No, but users are welcome to surround virtual sections with their own
+**Do virtual sections have a default backpressure strategy?** No. Users are welcome to surround virtual sections with their own
 backpressure strategy. See test cases `upstreamBackpressureTest1` and `upstreamBackpressureTest2` in
  [TimeBarriersTest](src/test/java/org/sireum/hooks/TimeBarriersTest.java) for an example.
 
 **How does virtual-reactor-hooks keep time-based operators on the virtual scheduler?**
 For any operator that has a default scheduler, reactor-virtual-hooks
 simply chooses to prefer the subscriber's virtual scheduler to the default if the call was made inside a virtual 
-section. Calls explicitly specifying the scheduler are not affected.
+section. Calls explicitly specifying the scheduler are excluded from the determination.
 
 For example, if within a virtual section,
 [`.timestamp()`](https://projectreactor.io/docs/core/release/api/reactor/core/publisher/Flux.html#timestamp--)
 yields timestamps measured by the virtual scheduler's clock, but
 [`.timestamp(Schedulers.parallel())`](https://projectreactor.io/docs/core/release/api/reactor/core/publisher/Flux.html#timestamp-reactor.core.scheduler.Scheduler-)
-is considered a user-specific override and
-([`parallel`](https://projectreactor.io/docs/core/release/api/reactor/core/scheduler/Schedulers.html#parallel--)) 
-will be used as requested.
+is considered a user-specific override and the
+[`parallel`](https://projectreactor.io/docs/core/release/api/reactor/core/scheduler/Schedulers.html#parallel--)
+scheduler will be the timepiece (as explicitly requested  by the user).
 
 **How is it determined whether or not a time-based operator exists within a virtual section?**
 Within a virtual-time section, each subscriber holds a unique virtual-time scheduler within its
