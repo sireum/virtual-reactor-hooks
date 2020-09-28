@@ -44,7 +44,7 @@ import static java.util.Collections.nCopies;
 import static org.sireum.hooks.TestUtils.*;
 
 public class FluxHooksTest {
-    
+
     @BeforeMethod
     public void beforeEach() {
         StepVerifier.setDefaultTimeout(DEFAULT_VERIFY_TIMEOUT);
@@ -57,21 +57,6 @@ public class FluxHooksTest {
     public static void afterEach() {
         VirtualTimeScheduler.reset();
         Schedulers.resetFactory();
-    }
-
-
-    // todo rm this random test
-    @Test
-    void randomTest() {
-        final Flux<String> f = Flux.just(1, 2, 3)
-                .onBackpressureDrop()
-                .map(n -> Integer.toString(n))
-                .doFinally(data -> {
-                    System.out.println(data);
-                });
-
-        f.blockLast();
-
     }
 
     @Test//(timeOut = DEFAULT_TEST_TIMEOUT)

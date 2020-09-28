@@ -38,9 +38,9 @@
         <!-- for both plugin dependencies and the copying of files containing the version name.      -->
         <!-- If the version of reactor-core or reactor-test does not correspond to reactor-bom, the  -->
         <!-- maven-enforcer-plugin will cause the build to fail instead (displaying the mismatch).   -->
-        <reactor-bom.version>Dysprosium-SR7</reactor-bom.version>
-        <reactor-core.version>3.3.5.RELEASE</reactor-core.version>
-        <reactor-test.version>3.3.5.RELEASE</reactor-test.version>
+        <reactor-bom.version>2020.0.0-RC1</reactor-bom.version> <!-- todo: changed to release candidate for test -->
+        <reactor-core.version>3.4.0-RC1</reactor-core.version> <!-- todo: changed to release candidate for test -->
+        <reactor-test.version>3.4.0-RC1</reactor-test.version> <!-- todo: changed to release candidate for test -->
 
         <aspectj.version>1.9.5</aspectj.version>
         <reactive-streams-tck.version>1.0.3</reactive-streams-tck.version>
@@ -58,6 +58,15 @@
         <install-plugin.version>2.5.2</install-plugin.version>
         <javadoc-plugin.version>3.2.0</javadoc-plugin.version>
     </properties>
+
+    <!-- TODO remove me: added for RC4 fetch -->
+    <repositories>
+        <repository>
+            <id>repository.spring.milestone</id>
+            <name>Spring Milestone Repository</name>
+            <url>https://repo.spring.io/milestone</url>
+        </repository>
+    </repositories>
 
     <profiles>
         <!--

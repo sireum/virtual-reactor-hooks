@@ -113,8 +113,8 @@ final class PackageUtils {
     @SuppressWarnings("unchecked")
     static <T> Mono<T> virtualMono(@NonNull ProceedingJoinPoint joinPoint,
                                    @NonNull Function<? super Scheduler, ? extends Mono<T>> builder) {
-        return Mono.deferWithContext(context -> {
-            final Optional<VirtualTimeScheduler> maybeScheduler = context.getOrEmpty(SCHEDULER_CONTEXT_KEY);
+        return Mono.deferContextual(contextView -> {
+            final Optional<VirtualTimeScheduler> maybeScheduler = contextView.getOrEmpty(SCHEDULER_CONTEXT_KEY);
             if (maybeScheduler.isPresent()) {
                 final VirtualTimeScheduler scheduler = maybeScheduler.get();
                 return builder.apply(scheduler);
@@ -161,8 +161,8 @@ final class PackageUtils {
     @NonNull
     @SuppressWarnings("unchecked")
     static <T> Flux<T> virtualFlux(ProceedingJoinPoint joinPoint, Function<? super Scheduler, ? extends Flux<T>> builder) {
-        return Flux.deferWithContext(context -> {
-            final Optional<VirtualTimeScheduler> maybeScheduler = context.getOrEmpty(SCHEDULER_CONTEXT_KEY);
+        return Flux.deferContextual(contextView -> {
+            final Optional<VirtualTimeScheduler> maybeScheduler = contextView.getOrEmpty(SCHEDULER_CONTEXT_KEY);
             if (maybeScheduler.isPresent()) {
                 final VirtualTimeScheduler scheduler = maybeScheduler.get();
                 return builder.apply(scheduler);
