@@ -26,7 +26,7 @@ modification notice. All redistributed reactor-core sources are prefixed with sa
     <dependency>
         <groupId>org.sireum</groupId>
         <artifactId>virtual-reactor-hooks</artifactId>
-        <version>3.3.5.RELEASE-beta</version>
+        <version>3.4.0-beta</version>
     </dependency>
 </dependencies>
 ```
@@ -40,14 +40,14 @@ allprojects {
 }
 
 dependencies {
-    implementation 'org.sireum:virtual-reactor-hooks:3.3.5.RELEASE-beta'
+    implementation 'org.sireum:virtual-reactor-hooks:3.4.0-beta'
 }
 ```
 
 #### Sbt
 ```sbt
 resolvers += "jitpack" at "https://jitpack.io"
-libraryDependencies += "org.sireum" % "virtual-reactor-hooks" % "3.3.5.RELEASE-beta"
+libraryDependencies += "org.sireum" % "virtual-reactor-hooks" % "3.4.0-beta"
 ```
 
 <!-- USAGE EXAMPLES -->
@@ -105,16 +105,26 @@ Per-subscriber output:
 
 ### Example 2
 ```java
-todo better example
+Flux.just(a, b, c, d, e, f)
+        .transform(TimeBarriers::ENTER_VIRTUAL_TIME)
+        .take(Duration.ofSeconds(8001))
+        .timestamp()
+        .doOnNext(System.out::println)
+        .transform(TimeBarriers::EXIT_VIRTUAL_TIME);
 ```
 Per-subscriber output:
 ```
-todo
+[2000,a]
+[4000,b]
+[6000,c]
+[8000,d]
 ```
 
 ### Example 3
 Virtual-reactor-hooks provides a `TimeUtils` class containing some useful utilities for dealing with virtual time.
-In this example, `TimeUtils.attachTimestamp(Instant, <T>)` is used to create the timestamp tuples.
+In this example, `TimeUtils.attachTimestamp(Instant, <T>)` is used to create 
+([and verify](src/main/java/org/sireum/hooks/PackageUtils.java)) the timestamp tuples.
+
 ```java
 Flux.range(1, 10)
         .filter(n -> n % 2 == 0) // evens only
@@ -253,11 +263,11 @@ or a raw
 ?**
 Some Flux/Mono operators work on a particular scheduler by default and thus exit virtual time. 
 Even if a user manually managed a `VirtualTimeScheduler` (and always remembered to pass it to these operators), they are 
-still blocked from transforming the stream with third-party libraries or any other potentially offending code.
+still potentially blocked from transforming the stream with third-party libraries or any other potentially offending code.
 Reactor's StepVerifier.withVirtualTime() fixes this issue by injecting a VirtualTimeScheduler into all Scheduler 
 factories, but this strategy doesn't work for concurrent Flux/Mono subscriptions which operate on different schedulers. 
 StepVerifier also requires users to declare the value of all timestamps before any subscription occurs.
-This is fantastic for testing (its intended purpose), but does not lend itself well to other use cases.
+This is fantastic for testing (its intended purpose), but does not lend itself well to some use cases.
 
 This library provides additional benefits:
   - per-subscriber virtual-time schedulers

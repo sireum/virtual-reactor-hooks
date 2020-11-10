@@ -3,14 +3,15 @@
  * A modified version of reactor-core's VirtualTimeScheduler.
  *
  * The following modifications have been made:
- *   (1) Removed all support for a "global VirtualTimeScheduler" installed by Scheduler factory hooks.
+ *   (1) Removed all support for a "global VirtualTimeScheduler" installed by Scheduler factory hooks
  *      - includes public methods like getOrSet() and reset()
  *      - includes relevant logic in non-removed methods, such as calling Schedulers.resetFactory() in dispose()
  *      - includes local variables, such as the AtomicReference to the current VirtualTimeScheduler
- * 	 (2) Removed "defer" field and constructor/factory parameters because defer is always false in this library.
+ * 	 (2) Removed "defer" field and constructor/factory parameters because defer is always false in this library
  * 		- Removed the if (!defer || !queue.isEmpty()) { ... } check because !defer was always true
- * 	 (3) Reduced class visibility from public to package-private.
- * 		- Also adjusted constructors/factory methods to match.
+ * 	 (3) Reduced class visibility from public to package-private
+ *      - Changed package to match this library (and not conflict with original VirtualTimeScheduler on classpath)
+ * 		- Also adjusted constructors/factory methods to match
  *   (4) Changed "advanceTimeTo(Instant)" method to only advance if currentTime <= newTime
  *      - return signature changed from void to boolean (true if time was advanced)
  *   (5) Deleted "advanceTimeBy(Duration)" method

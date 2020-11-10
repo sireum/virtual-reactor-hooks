@@ -145,13 +145,12 @@ final class PackageUtils {
      * <br>
      * A consequence of this strategy is that it may limit assembly-time optimization for non-virtual time-based
      * operators because their implementation is now decided at subscription time. This is because without a
-     * "not-in-virtual-time" hint, the time-based operators are chosen subscription time (even if it is non-virtual).
-     * This overhead can be completely avoided by calling {@link Flux#transform(Function)} with
-     * {@link TimeBarriers#ATTACH_NOT_VIRTUAL_HINT(Flux)} upstream of any number of time-based operators. This will
+     * "not in virtual time" hint, the time-based operators are chosen at subscription time (even if it is non-virtual).
+     * This overhead can be completely avoided by {@link Flux#transform(Function)}ing the chain with
+     * {@link TimeBarriers#ATTACH_NOT_VIRTUAL_HINT(Flux)} upstream of any problematic time-based operators. This will
      * ensure the operators undergo normal assembly.
      * <br>
-     * Note that this method is only called for joinPoints that return time-sensitive
-     * {@link org.reactivestreams.Publisher}s.
+     * This method is only intended for use by joinPoints that return time-sensitive {@link org.reactivestreams.Publisher}s.
      *
      * @param joinPoint the joinPoint of the user's original, time-sensitive {@link Flux}-creating, method call
      * @param builder a function mapping the virtual-section's {@link VirtualTimeScheduler} to its adjusted {@link Flux}
@@ -177,12 +176,13 @@ final class PackageUtils {
     }
 
     /**
-     * Returns whether or not the given instant can be handled by the virtual time scheduler.
+     * Returns whether or not the given {@link Instant} can be handled by the virtual time scheduler.
+     * An {@link Instant} is be supported iff it can be represented by a single {@link Long} (indicating milliseconds).
      *
      * @param instant the {@link Instant} to be validated
      * @return true iff the given {@link Instant} is supported in virtual time
      */
-    static boolean  validate(@NonNull Instant instant) {
+    static boolean validate(@NonNull Instant instant) {
         return !instant.isBefore(MIN_EPOCH) && !instant.isAfter(MAX_EPOCH);
     }
 }

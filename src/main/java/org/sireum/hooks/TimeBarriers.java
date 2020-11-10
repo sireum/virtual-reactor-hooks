@@ -264,7 +264,7 @@ public final class TimeBarriers {
                                                    @NonNull BiFunction<A, ? super Tuple2<Instant,T>, ? extends A> accumulator,
                                                    @NonNull Function<A, Instant> extractor) {
         return flux
-                .subscriberContext(context -> context.delete(PackageUtils.SCHEDULER_CONTEXT_KEY))
+                .contextWrite(context -> context.delete(PackageUtils.SCHEDULER_CONTEXT_KEY))
                 .transform(TimeBarriers::REMOVE_INSTRUMENTATION_HINTS)
                 .transform(source -> BarrierAssembly.fluxBegin(source, initial, accumulator, extractor));
     }
@@ -370,7 +370,7 @@ public final class TimeBarriers {
                                                    @NonNull BiFunction<A, ? super Tuple2<Instant,T>, ? extends A> accumulator,
                                                    @NonNull Function<A, Instant> extractor) {
         return mono
-                .subscriberContext(context -> context.delete(PackageUtils.SCHEDULER_CONTEXT_KEY))
+                .contextWrite(context -> context.delete(PackageUtils.SCHEDULER_CONTEXT_KEY))
                 .transform(TimeBarriers::REMOVE_INSTRUMENTATION_HINTS)
                 .transform(source -> BarrierAssembly.monoBegin(source, initial, accumulator, extractor));
     }
@@ -588,9 +588,6 @@ public final class TimeBarriers {
         return erased;
     }
 
-    // only works after first EXIT_VIRTUAL_TIME usage (otherwise no way to know if inner flux is virtual)
-    // (unless a hint is provided by the user)
-
     /**
      * Returns true if the given {@link ProceedingJoinPoint} does NOT point to a target tagged with
      * INSTRUMENTATION_GUARD_TAG.
@@ -637,7 +634,7 @@ public final class TimeBarriers {
         }
 
         /**
-         * Creates {@link CoreSubscriber} from which all behavior is deferred, and uses it to subscribe to the source.
+         * Creates {@link CoreSubscriber} delegate which is subscribed to the source.
          *
          * @param delegate the source which all actions are delegated to
          */

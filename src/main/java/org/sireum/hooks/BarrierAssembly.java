@@ -60,7 +60,6 @@ final class BarrierAssembly {
      *                                  on the state-tracker's value when onComplete is called. See
      *                                  {@link UnreachableTimeException} and {@link UnsupportedTimeException} for
      *                                  limitations on what this {@link Instant} can be.
-     *
      * @param <T> the type of value emitted by the source {@link Flux}
      * @param <A> the type of the accumulator / state-tracker managed as values are pushed into the virtual section
      * @return a {@link Flux} of the same values, without timestamps, and within an unclosed virtual section
@@ -112,7 +111,6 @@ final class BarrierAssembly {
      *                  on the state-tracker's value when onComplete is called. See
      *                  {@link UnreachableTimeException} and {@link UnsupportedTimeException} for
      *                  limitations on what this {@link Instant} can be.
-     *
      * @param <T> the type of value emitted by the source {@link Mono}
      * @param <A> the type of the accumulator / state-tracker managed when the value is pushed into the virtual section
      * @return a {@link Mono} of the same value, without its timestamp, and within an unclosed virtual section
@@ -141,10 +139,9 @@ final class BarrierAssembly {
     /**
      * Utility class containing virtual-time "begin" and "end" operators for {@link Flux}
      * {@link org.reactivestreams.Publisher}s. This class only exists because {@link Flux}'s onAssembly method has
-     * protected access and thus virtual-time factory methods must eventually delegate to method which extends
-     * {@link Flux} and is therefore capable of calling onAssembly.
+     * protected access requiring virtual-time factory methods to be enclosed in a {@link Flux} subclass.
      *
-     * @param <T> the inbound type to be timestamped via a (Long,<T>) {@link Tuple2}.
+     * @param <T> the inbound type to be timestamped via a (Long,T) {@link Tuple2}.
      */
     private abstract static class FluxAssembly<T> extends Flux<Tuple2<Long,T>> {
 
@@ -156,9 +153,10 @@ final class BarrierAssembly {
         }
 
         /**
-         * File-private delegate method to {@link BarrierAssembly#fluxBegin(Flux, Supplier, BiFunction, Function)} which
-         * is contained in a {@link Flux}-extending class so that {@link Flux}'s protected onAssembly method can be
-         * called to support user {@link Hooks}.
+         * File-private delegate method to {@link BarrierAssembly#fluxBegin(Flux, Supplier, BiFunction, Function)}.
+         *
+         * This method is contained in a {@link Flux}-extending class so that {@link Flux}'s protected onAssembly
+         * method can be called to support user {@link Hooks}.
          *
          * @param source the {@link Flux} whose values will be entered into virtual time.
          * @param initial {@link Supplier} returning the initial value of some arbitrary state-tracker. This value is
@@ -182,23 +180,41 @@ final class BarrierAssembly {
             return onAssembly(new FluxBeginVirtualTimeOperator<>(source, initial, accumulator, extractor));
         }
 
+        /**
+         * File-private delegate method to {@link BarrierAssembly#fluxEnd(Flux, Supplier)}.
+         *
+         * This method is contained in a {@link Flux}-extending class so that {@link Flux}'s protected onAssembly
+         * method can be called to support user {@link Hooks}.
+         *
+         * @param source the virtual-time {@link Flux} to be brought back into real time.
+         * @param startTime {@link Supplier} of virtual section's start time.
+         * @param <T> the type of value emitted by the source {@link Flux}
+         * @return a {@link Flux} of the same values, but now outside of the virtual segment
+         */
         @NonNull
         private static <T> Flux<T> end(@NonNull Flux<T> source, @NonNull Supplier<Instant> startTime) {
             return onAssembly(new FluxEndVirtualTimeOperator<>(source, startTime));
         }
     }
 
+    /**
+     * Utility class containing virtual-time "begin" and "end" operators for {@link Mono}
+     * {@link org.reactivestreams.Publisher}s. This class only exists because {@link Mono}'s onAssembly method has
+     * protected access requiring virtual-time factory methods to be enclosed in a {@link Mono} subclass.
+     *
+     * @param <T> the inbound type to be timestamped via a (Long,T) {@link Tuple2}.
+     */
     private abstract static class MonoAssembly<T> extends Mono<Tuple2<Long,T>> {
 
         /**
-         * This is a utility class and cannot be instantiated.s
+         * This is a utility class and cannot be instantiated.
          */
         private MonoAssembly() {
             throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
         }
 
         /**
-         * Mono-equivalent version of {@link BarrierAssembly#fluxBegin(Flux, Supplier, BiFunction, Function)}.
+         * Mono-equivalent version of {@link FluxAssembly#begin(Flux, Supplier, BiFunction, Function)}.
          *
          * @param source the {@link Mono} whose values will be entered into virtual time.
          * @param initial {@link Supplier} returning the initial value of some arbitrary state-tracker. This value is
@@ -212,7 +228,7 @@ final class BarrierAssembly {
          *                                  limitations on what this {@link Instant} can be.
          * @param <T> the type of value emitted by the source {@link Mono}
          * @param <A> the type of the accumulator / state-tracker managed as values are pushed into the virtual section
-         * @return a {@link Mono} of the same values, without timestamps, and within an unclosed virtual section
+         * @return a {@link Mono} of the same value, without timestamps, and within an unclosed virtual section
          */
         @NonNull
         private static <T,A> Mono<T> begin(@NonNull Mono<Tuple2<Long,T>> source,
@@ -222,12 +238,26 @@ final class BarrierAssembly {
             return onAssembly(new MonoBeginVirtualTimeOperator<>(source, initial, accumulator, extractor));
         }
 
+        /**
+         * Mono-equivalent version of {@link FluxAssembly#end(Flux, Supplier)}.
+         *
+         * @param source the virtual-time {@link Mono} to be brought back into real time
+         * @param startTime {@link Supplier} of virtual section's start time
+         * @param <T> the type of value emitted by the source {@link Mono}
+         * @return a {@link Mono} of the same value, but now outside of the virtual segment
+         */
         @NonNull
         private static <T> Mono<T> end(@NonNull Mono<T> source, @NonNull Supplier<Instant> startTime) {
             return onAssembly(new MonoEndVirtualTimeOperator<>(source, startTime));
         }
     }
 
+    /**
+     * Begins a virtual section. Also creates the initial instance of accumulator A for each subscription.
+     *
+     * @param <T> the type of value emitted by the source
+     * @param <A> the type of accumulator used to determine a subscriber's virtual-section's stop time
+     */
     private static final class FluxBeginVirtualTimeOperator<T,A> extends FluxOperator<Tuple2<Long,T>,T> {
 
         private final Supplier<A> initial;
@@ -250,6 +280,11 @@ final class BarrierAssembly {
         }
     }
 
+    /**
+     * Ends a virtual section. Also resolves the virtual-section's start time for each subscription.
+     *
+     * @param <T> the type of value emitted by the source
+     */
     private static final class FluxEndVirtualTimeOperator<T> extends FluxOperator<T,T> {
 
         @NonNull
@@ -266,6 +301,12 @@ final class BarrierAssembly {
         }
     }
 
+    /**
+     * Begins a virtual section. Also creates the initial instance of accumulator A for each subscription.
+     *
+     * @param <T> the type of value emitted by the source
+     * @param <A> the type of accumulator used to determine a subscriber's virtual-section's stop time
+     */
     private static final class MonoBeginVirtualTimeOperator<T, A> extends MonoOperator<Tuple2<Long,T>,T> {
 
         private final Supplier<A> initial;
@@ -288,6 +329,11 @@ final class BarrierAssembly {
         }
     }
 
+    /**
+     * Ends a virtual section. Also resolves the virtual-section's start time for each subscription.
+     *
+     * @param <T> the type of value emitted by the source
+     */
     private static final class MonoEndVirtualTimeOperator<T> extends MonoOperator<T,T> {
 
         @NonNull
@@ -304,26 +350,39 @@ final class BarrierAssembly {
         }
     }
 
+    /**
+     * Accepts {@link Tuple2} (Long,T) timestamped values from a source {@link Flux}, emits the raw T values downstream,
+     * and aligns the {@link org.reactivestreams.Subscriber}'s {@link VirtualTimeScheduler}'s clock with each emitted
+     * value T's timestamp in lockstep with emission.
+     * <br>
+     * Ensures timestamps are supported by the {@link VirtualTimeScheduler} and emitted monotonically, otherwise
+     * emitting an {@link UnsupportedTimeException} or {@link UnreachableTimeException} respectively.
+     * <br>
+     * Will emit a {@link BarrierSubscriptionException} during subscription time if no {@link VirtualTimeScheduler} is
+     * found on the {@link Context}. This occurs when a downstream {@link BarrierEndInnerOperator} is either absent
+     * or "subscriber-context unreachable" from intermediate context loss.
+     *
+     * @param <T> the type of value emitted by the source
+     * @param <A> the type of accumulator used to determine a subscriber's virtual-section's stop time
+     */
     private static final class BarrierBeginInnerOperator<T,A> implements CoreSubscriber<Tuple2<Long,T>>, Subscription, Scannable {
 
         private final CoreSubscriber<? super T> actual;
         private final Context context;
 
+        // null iff no VirtualTimeScheduler was put in Context by a downstream EXIT_VIRTUAL_TIME operator
+        // nullness is checked for during subscription, and will return an error as needed.
+        // todo currently NPE can be thrown if non-behaving subscriber invokes onNext before onSubscribe... check for this?
         @Nullable
         private final VirtualTimeScheduler scheduler;
 
-        // todo: reactor only makes volatile when cross-thread boundaries are of concern, but what happens if a 3rd
-        //       party operator crosses thread boundary and doesn't provide the info at assembly? Do they always take
-        //       pessimistic approach? Is best option to write multiple implementations based on assembly info?
         private boolean done;
 
-        // todo: see above todo, reactor makes subscription volatile at boundaries but when are such operators used?
         private Subscription s;
 
         private final BiFunction<A, ? super Tuple2<Instant,T>, ?  extends A> accumulator;
         private final Function<A, Instant> extractor;
 
-        // todo: thoroughly re-read onNext and onComplete threading rules and make 100% this can't get messed up.
         private A acc;
 
         private BarrierBeginInnerOperator(@NonNull CoreSubscriber<? super T> actual,
@@ -368,6 +427,8 @@ final class BarrierAssembly {
             } else {
                 final Tuple2<Instant,T> mapped = t.mapT1(Instant::ofEpochMilli);
                 acc = accumulator.apply(acc, mapped);
+
+                // todo should a null check occur so that a "MisbehavingSubscriberException" or something can be thrown?
 
                 if (scheduler.advanceTimeTo(mapped.getT1())) {
                     actual.onNext(mapped.getT2());
@@ -447,11 +508,27 @@ final class BarrierAssembly {
             if (key == Attr.TERMINATED) return done;
             if (key == Attr.ACTUAL) return actual;
             if (key == Attr.RUN_ON) return scheduler;
+            if (key == Attr.RUN_STYLE) return Attr.RunStyle.SYNC;
 
             return null;
         }
     }
 
+    /**
+     * Forwards values of T from a virtual-time source to a "real-time" downstream.
+     * <br>
+     * This does NOT imply a {@link reactor.core.scheduler.Scheduler} change.
+     * Downstream operators will continue on the {@link org.reactivestreams.Subscriber}'s virtual-section's
+     * {@link VirtualTimeScheduler} (which itself delegates event execution to another scheduler as mediated by its
+     * virtual-time clock).
+     * Despite the shared scheduler, the virtual-section's mediating clock cannot influence post-virtual-section
+     * operators, because they all schedule events instantly.
+     * Any post-virtual-section operator that does NOT schedule immediately will either automatically swap schedulers
+     * or run on a user-specified scheduler (as enforced by reactor and rxJava API), and thus will naturally swap
+     * schedulers "just in time" to avoid clock conflict.
+     *
+     * @param <T> the type of value emitted by the source
+     */
     private static final class BarrierEndInnerOperator<T> implements CoreSubscriber<T>, Subscription, Scannable {
 
         private final CoreSubscriber<? super T> actual;
@@ -459,12 +536,8 @@ final class BarrierAssembly {
 
         private final VirtualTimeScheduler scheduler;
 
-        // todo: reactor only makes volatile when cross-thread boundaries are of concern, but what happens if a 3rd
-        //       party operator crosses thread boundary and doesn't provide the info at assembly? Do they always take
-        //       pessimistic approach? Todo maybe write multiple implementations based on assembly info?
         private boolean done;
 
-        // todo: see above todo, reactor makes subscription volatile at boundaries but when are such operators used?
         private Subscription s;
 
         private BarrierEndInnerOperator(@NonNull CoreSubscriber<? super T> actual, @NonNull Instant startTime) {
@@ -474,11 +547,15 @@ final class BarrierAssembly {
             if (PackageUtils.validate(startTime)) {
                 // recall this method is called in outer operator's onSubscribe
                 scheduler.advanceTimeTo(startTime);
-                this.context = actual.currentContext().putAll(Context.of(PackageUtils.SCHEDULER_CONTEXT_KEY, scheduler));
+                this.context = actual.currentContext().put(PackageUtils.SCHEDULER_CONTEXT_KEY, scheduler);
             } else {
                 // if invalid, add the offending startTime to the context so it can be used to craft an error message
                 // during onSubscribe
-                this.context = actual.currentContext().putAll(Context.of(PackageUtils.SCHEDULER_CONTEXT_KEY, scheduler, Instant.class, startTime));
+                // todo is Instant.class too generic of a context key?? Should probably be namespaced string...
+                //    better yet... would protected classes be more secure than namespaced keys for each value in ctx?
+                this.context = actual.currentContext()
+                        .put(PackageUtils.SCHEDULER_CONTEXT_KEY, scheduler)
+                        .put(Instant.class, startTime);
             }
         }
 
@@ -547,6 +624,7 @@ final class BarrierAssembly {
             if (key == Attr.TERMINATED) return done;
             if (key == Attr.ACTUAL) return actual;
             if (key == Attr.RUN_ON) return scheduler;
+            if (key == Attr.RUN_STYLE) return Attr.RunStyle.SYNC;
 
             return null;
         }
