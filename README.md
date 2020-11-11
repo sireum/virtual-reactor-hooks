@@ -94,30 +94,32 @@ Flux.just(a, b, c)
         .transform(TimeBarriers::ENTER_VIRTUAL_TIME)
         .timestamp()
         .doOnNext(System.out::println)
-        .transform(TimeBarriers::EXIT_VIRTUAL_TIME);
+        .transform(TimeBarriers::EXIT_VIRTUAL_TIME)
+        .subscribe();
 ```
-Per-subscriber output:
+Output:
 ```
-[2000,a]
-[4000,b]
-[6000,c]
+[2000,Event A]
+[4000,Event B]
+[6000,Event C]
 ```
 
 ### Example 2
 ```java
 Flux.just(a, b, c, d, e, f)
         .transform(TimeBarriers::ENTER_VIRTUAL_TIME)
-        .take(Duration.ofSeconds(8001))
+        .take(Duration.ofMillis(8001))
         .timestamp()
         .doOnNext(System.out::println)
-        .transform(TimeBarriers::EXIT_VIRTUAL_TIME);
+        .transform(TimeBarriers::EXIT_VIRTUAL_TIME)
+        .subscribe();
 ```
-Per-subscriber output:
+Output:
 ```
-[2000,a]
-[4000,b]
-[6000,c]
-[8000,d]
+[2000,Event A]
+[4000,Event B]
+[6000,Event C]
+[8000,Event D]
 ```
 
 ### Example 3
