@@ -70,7 +70,7 @@ public class ReactorAdvice {
         /**
          * If a virtual scheduler is available, hook {@link Flux#interval(Duration)} into {@link Flux#interval(Duration, Scheduler)}.
          *
-         * @param joinPoint @link org.aspectj.lang.JoinPoint} wrapping the call
+         * @param joinPoint {@link org.aspectj.lang.JoinPoint} wrapping the call
          * @param period    user arg
          * @return a new {@link Flux}
          */
@@ -84,7 +84,7 @@ public class ReactorAdvice {
         /**
          * If a virtual scheduler is available, hook {@link Flux#interval(Duration)} into {@link Flux#interval(Duration, Scheduler)}.
          *
-         * @param joinPoint @link org.aspectj.lang.JoinPoint} wrapping the call
+         * @param joinPoint {@link org.aspectj.lang.JoinPoint} wrapping the call
          * @param delay    user arg
          * @param period    user arg
          * @return a new {@link Flux}
@@ -99,7 +99,7 @@ public class ReactorAdvice {
         /**
          * If a virtual scheduler is available, hook {@link Flux#buffer(Duration)} into {@link Flux#buffer(Duration, Scheduler)}.
          *
-         * @param joinPoint         @link org.aspectj.lang.JoinPoint} wrapping the call
+         * @param joinPoint {@link org.aspectj.lang.JoinPoint} wrapping the call
          * @param bufferingTimespan user arg
          * @return a new {@link Flux}
          */
@@ -116,7 +116,7 @@ public class ReactorAdvice {
         /**
          * If a virtual scheduler is available, hook {@link Flux#buffer(Duration)} into {@link Flux#buffer(Duration, Scheduler)}.
          *
-         * @param joinPoint       @link org.aspectj.lang.JoinPoint} wrapping the call
+         * @param joinPoint {@link org.aspectj.lang.JoinPoint} wrapping the call
          * @param bufferingTimespan user arg
          * @param openBufferEvery user arg
          * @return a new {@link Flux}
@@ -134,7 +134,7 @@ public class ReactorAdvice {
         /**
          * If a virtual scheduler is available, hook {@link Flux#bufferTimeout(int, Duration)} into {@link Flux#bufferTimeout(int, Duration, Scheduler)}.
          *
-         * @param joinPoint @link org.aspectj.lang.JoinPoint} wrapping the call
+         * @param joinPoint {@link org.aspectj.lang.JoinPoint} wrapping the call
          * @param maxSize   user arg
          * @param maxTime   user arg
          * @return a new {@link Flux}
@@ -152,7 +152,7 @@ public class ReactorAdvice {
         /**
          * If a virtual scheduler is available, hook {@link Flux#bufferTimeout(int, Duration, Supplier)} into {@link Flux#bufferTimeout(int, Duration, Scheduler, Supplier)}.
          *
-         * @param joinPoint      @link org.aspectj.lang.JoinPoint} wrapping the call
+         * @param joinPoint {@link org.aspectj.lang.JoinPoint} wrapping the call
          * @param maxSize user arg
          * @param maxTime user arg
          * @param bufferSupplier user arg
@@ -172,7 +172,7 @@ public class ReactorAdvice {
         /**
          * If a virtual scheduler is available, hook {@link Flux#cache(Duration)} into {@link Flux#cache(Duration, Scheduler)}.
          *
-         * @param joinPoint @link org.aspectj.lang.JoinPoint} wrapping the call
+         * @param joinPoint {@link org.aspectj.lang.JoinPoint} wrapping the call
          * @param ttl       user arg
          * @return a new {@link Flux}
          */
@@ -191,7 +191,7 @@ public class ReactorAdvice {
         /**
          * If a virtual scheduler is available, hook {@link Flux#cache(Duration)} into {@link Flux#cache(Duration, Scheduler)}.
          *
-         * @param joinPoint @link org.aspectj.lang.JoinPoint} wrapping the call
+         * @param joinPoint {@link org.aspectj.lang.JoinPoint} wrapping the call
          * @param history       user arg
          * @param ttl       user arg
          * @return a new {@link Flux}
@@ -211,7 +211,7 @@ public class ReactorAdvice {
         /**
          * If a virtual scheduler is available, hook {@link Flux#delayElements(Duration)} into {@link Flux#delayElements(Duration, Scheduler)}.
          *
-         * @param joinPoint @link org.aspectj.lang.JoinPoint} wrapping the call
+         * @param joinPoint {@link org.aspectj.lang.JoinPoint} wrapping the call
          * @param delay     user arg
          * @return a new {@link Flux}
          */
@@ -228,7 +228,7 @@ public class ReactorAdvice {
         /**
          * If a virtual scheduler is available, hook {@link Flux#delaySequence(Duration)} into {@link Flux#delaySequence(Duration, Scheduler)}.
          *
-         * @param joinPoint @link org.aspectj.lang.JoinPoint} wrapping the call
+         * @param joinPoint {@link org.aspectj.lang.JoinPoint} wrapping the call
          * @param delay     user arg
          * @return a new {@link Flux}
          */
@@ -249,7 +249,7 @@ public class ReactorAdvice {
          * EXIT_VIRTUAL_TIME operator is not provided with a startTime greater than or equal to the delaySubscription
          * delay.
          *
-         * @param joinPoint @link org.aspectj.lang.JoinPoint} wrapping the call
+         * @param joinPoint {@link org.aspectj.lang.JoinPoint} wrapping the call
          * @param delay     user arg
          * @return a new {@link Flux}
          */
@@ -265,7 +265,7 @@ public class ReactorAdvice {
         /**
          * If a virtual scheduler is available, hook {@link Flux#elapsed()} into {@link Flux#elapsed(, Scheduler)}.
          *
-         * @param joinPoint @link org.aspectj.lang.JoinPoint} wrapping the call
+         * @param joinPoint {@link org.aspectj.lang.JoinPoint} wrapping the call
          * @return a new {@link Flux}
          */
         @Around(value = "execution(public final * reactor.core.publisher.Flux.elapsed(..)) && args()", argNames = "joinPoint")
@@ -281,7 +281,7 @@ public class ReactorAdvice {
         /**
          * If a virtual scheduler is available, hook {@link Flux#onBackpressureBuffer(Duration, int, Consumer)} into {@link Flux#onBackpressureBuffer(Duration, int, Consumer, Scheduler)}.
          *
-         * @param joinPoint        @link org.aspectj.lang.JoinPoint} wrapping the call
+         * @param joinPoint {@link org.aspectj.lang.JoinPoint} wrapping the call
          * @param ttl user arg
          * @param maxSize user arg
          * @param onBufferEviction user arg
@@ -303,7 +303,7 @@ public class ReactorAdvice {
         /**
          * If a virtual scheduler is available, hook {@link Flux#replay(Duration)} into {@link Flux#replay(Duration, Scheduler)}.
          *
-         * @param joinPoint @link org.aspectj.lang.JoinPoint} wrapping the call
+         * @param joinPoint {@link org.aspectj.lang.JoinPoint} wrapping the call
          * @param ttl       user arg
          * @return a new {@link Flux}
          */
@@ -327,7 +327,7 @@ public class ReactorAdvice {
         /**
          * If a virtual scheduler is available, hook {@link Flux#replay(Duration)} into {@link Flux#replay(Duration, Scheduler)}.
          *
-         * @param joinPoint @link org.aspectj.lang.JoinPoint} wrapping the call
+         * @param joinPoint {@link org.aspectj.lang.JoinPoint} wrapping the call
          * @param history       user arg
          * @param ttl       user arg
          * @return a new {@link Flux}
@@ -355,7 +355,7 @@ public class ReactorAdvice {
          * <p>
          * todo: change this behavior? The only problematic case is when the {@link Retry} has a {@link Scheduler}
          *
-         * @param joinPoint @link org.aspectj.lang.JoinPoint} wrapping the call
+         * @param joinPoint {@link org.aspectj.lang.JoinPoint} wrapping the call
          * @param retrySpec user arg
          * @return a new {@link Flux}
          */
@@ -374,7 +374,7 @@ public class ReactorAdvice {
         /**
          * If a virtual scheduler is available, hook {@link Flux#skip(Duration)} into {@link Flux#skip(Duration, Scheduler)}.
          *
-         * @param joinPoint @link org.aspectj.lang.JoinPoint} wrapping the call
+         * @param joinPoint {@link org.aspectj.lang.JoinPoint} wrapping the call
          * @param timespan  user arg
          * @return a new {@link Flux}
          */
@@ -391,7 +391,7 @@ public class ReactorAdvice {
         /**
          * If a virtual scheduler is available, hook {@link Flux#take(Duration)} into {@link Flux#take(Duration, Scheduler)}.
          *
-         * @param joinPoint @link org.aspectj.lang.JoinPoint} wrapping the call
+         * @param joinPoint {@link org.aspectj.lang.JoinPoint} wrapping the call
          * @param timespan  user arg
          * @return a new {@link Flux}
          */
@@ -408,7 +408,7 @@ public class ReactorAdvice {
         /**
          * If a virtual scheduler is available, hook {@link Flux#timeout(Duration)} into {@link Flux#timeout(Duration, Scheduler)}.
          *
-         * @param joinPoint @link org.aspectj.lang.JoinPoint} wrapping the call
+         * @param joinPoint {@link org.aspectj.lang.JoinPoint} wrapping the call
          * @param timeout   user arg
          * @return a new {@link Flux}
          */
@@ -425,7 +425,7 @@ public class ReactorAdvice {
         /**
          * If a virtual scheduler is available, hook {@link Flux#timeout(Duration, Publisher)} into {@link Flux#timeout(Duration, Publisher, Scheduler)}.
          *
-         * @param joinPoint @link org.aspectj.lang.JoinPoint} wrapping the call
+         * @param joinPoint {@link org.aspectj.lang.JoinPoint} wrapping the call
          * @param timeout user arg
          * @param publisher user arg
          * @return a new {@link Flux}
@@ -444,7 +444,7 @@ public class ReactorAdvice {
         /**
          * If a virtual scheduler is available, hook {@link Flux#timestamp()} into {@link Flux#timestamp(, Scheduler)}.
          *
-         * @param joinPoint @link org.aspectj.lang.JoinPoint} wrapping the call
+         * @param joinPoint {@link org.aspectj.lang.JoinPoint} wrapping the call
          * @return a new {@link Flux}
          */
         @Around(value = "execution(public final * reactor.core.publisher.Flux.timestamp(..)) && args()", argNames = "joinPoint")
@@ -460,7 +460,7 @@ public class ReactorAdvice {
         /**
          * If a virtual scheduler is available, hook {@link Flux#window(Duration)} into {@link Flux#window(Duration, Scheduler)}.
          *
-         * @param joinPoint         @link org.aspectj.lang.JoinPoint} wrapping the call
+         * @param joinPoint {@link org.aspectj.lang.JoinPoint} wrapping the call
          * @param windowingTimespan user arg
          * @return a new {@link Flux}
          */
@@ -477,7 +477,7 @@ public class ReactorAdvice {
         /**
          * If a virtual scheduler is available, hook {@link Flux#window(Duration)} into {@link Flux#window(Duration, Scheduler)}.
          *
-         * @param joinPoint       @link org.aspectj.lang.JoinPoint} wrapping the call
+         * @param joinPoint {@link org.aspectj.lang.JoinPoint} wrapping the call
          * @param windowingTimespan user arg
          * @param openWindowEvery user arg
          * @return a new {@link Flux}
@@ -495,7 +495,7 @@ public class ReactorAdvice {
         /**
          * If a virtual scheduler is available, hook {@link Flux#windowTimeout(int, Duration)} into {@link Flux#windowTimeout(int, Duration, Scheduler)}.
          *
-         * @param joinPoint @link org.aspectj.lang.JoinPoint} wrapping the call
+         * @param joinPoint {@link org.aspectj.lang.JoinPoint} wrapping the call
          * @param maxSize   user arg
          * @param maxTime   user arg
          * @return a new {@link Flux}
@@ -536,7 +536,7 @@ public class ReactorAdvice {
         /**
          * If a virtual scheduler is available, hook {@link Mono#delay(Duration)} into {@link Mono#delay(Duration, Scheduler)}.
          *
-         * @param joinPoint @link org.aspectj.lang.JoinPoint} wrapping the call
+         * @param joinPoint {@link org.aspectj.lang.JoinPoint} wrapping the call
          * @param duration  user arg
          * @return a new {@link Mono}
          */
@@ -549,7 +549,7 @@ public class ReactorAdvice {
         /**
          * If a virtual scheduler is available, hook {@link Mono#cache(Duration)} into {@link Mono#cache(Duration, Scheduler)}.
          *
-         * @param joinPoint @link org.aspectj.lang.JoinPoint} wrapping the call
+         * @param joinPoint {@link org.aspectj.lang.JoinPoint} wrapping the call
          * @param ttl       user arg
          * @return a new {@link Mono}
          */
@@ -568,7 +568,7 @@ public class ReactorAdvice {
         /**
          * If a virtual scheduler is available, hook {@link Mono#delayElement(Duration)} into {@link Mono#delayElement(Duration, Scheduler)}.
          *
-         * @param joinPoint @link org.aspectj.lang.JoinPoint} wrapping the call
+         * @param joinPoint {@link org.aspectj.lang.JoinPoint} wrapping the call
          * @param delay     user arg
          * @return a new {@link Mono}
          */
@@ -589,7 +589,7 @@ public class ReactorAdvice {
          * EXIT_VIRTUAL_TIME operator is not provided with a startTime greater than or equal to the delaySubscription
          * delay.
          *
-         * @param joinPoint @link org.aspectj.lang.JoinPoint} wrapping the call
+         * @param joinPoint {@link org.aspectj.lang.JoinPoint} wrapping the call
          * @param delay     user arg
          * @return a new {@link Mono}
          */
@@ -605,7 +605,7 @@ public class ReactorAdvice {
         /**
          * If a virtual scheduler is available, hook {@link Mono#elapsed()} into {@link Mono#elapsed(, Scheduler)}.
          *
-         * @param joinPoint @link org.aspectj.lang.JoinPoint} wrapping the call
+         * @param joinPoint {@link org.aspectj.lang.JoinPoint} wrapping the call
          * @return a new {@link Mono}
          */
         @Around(value = "execution(public final * reactor.core.publisher.Mono.elapsed(..)) && args()", argNames = "joinPoint")
@@ -624,7 +624,7 @@ public class ReactorAdvice {
          * <p>
          * todo: change this behavior? The only problematic case is when the {@link Retry} has a {@link Scheduler}
          *
-         * @param joinPoint @link org.aspectj.lang.JoinPoint} wrapping the call
+         * @param joinPoint {@link org.aspectj.lang.JoinPoint} wrapping the call
          * @param retrySpec user arg
          * @return a new {@link Mono}
          */
@@ -643,7 +643,7 @@ public class ReactorAdvice {
         /**
          * If a virtual scheduler is available, hook {@link Mono#take(Duration)} into {@link Mono#take(Duration, Scheduler)}.
          *
-         * @param joinPoint @link org.aspectj.lang.JoinPoint} wrapping the call
+         * @param joinPoint {@link org.aspectj.lang.JoinPoint} wrapping the call
          * @param duration  user arg
          * @return a new {@link Mono}
          */
@@ -660,7 +660,7 @@ public class ReactorAdvice {
         /**
          * If a virtual scheduler is available, hook {@link Mono#timeout(Duration)} into {@link Mono#timeout(Duration, Scheduler)}.
          *
-         * @param joinPoint @link org.aspectj.lang.JoinPoint} wrapping the call
+         * @param joinPoint {@link org.aspectj.lang.JoinPoint} wrapping the call
          * @param timeout   user arg
          * @return a new {@link Mono}
          */
@@ -677,7 +677,7 @@ public class ReactorAdvice {
         /**
          * If a virtual scheduler is available, hook {@link Mono#timeout(Duration, Mono)} into {@link Mono#timeout(Duration, Mono, Scheduler)}.
          *
-         * @param joinPoint @link org.aspectj.lang.JoinPoint} wrapping the call
+         * @param joinPoint {@link org.aspectj.lang.JoinPoint} wrapping the call
          * @param fallback  user arg
          * @return a new {@link Mono}
          */
@@ -695,7 +695,7 @@ public class ReactorAdvice {
         /**
          * If a virtual scheduler is available, hook {@link Mono#timestamp()} into {@link Mono#timestamp(, Scheduler)}.
          *
-         * @param joinPoint @link org.aspectj.lang.JoinPoint} wrapping the call
+         * @param joinPoint {@link org.aspectj.lang.JoinPoint} wrapping the call
          * @return a new {@link Mono}
          */
         @Around(value = "execution(public final * reactor.core.publisher.Mono.timestamp(..)) && args()", argNames = "joinPoint")
@@ -734,7 +734,7 @@ public class ReactorAdvice {
         /**
          * If a virtual scheduler is available, hook {@link ConnectableFlux#refCount(int, Duration)} into {@link ConnectableFlux#refCount(int, Duration, Scheduler)}.
          *
-         * @param joinPoint   @link org.aspectj.lang.JoinPoint} wrapping the call
+         * @param joinPoint {@link org.aspectj.lang.JoinPoint} wrapping the call
          * @param minSubscribers user arg
          * @param gracePeriod user arg
          * @return a new {@link ConnectableFlux}
